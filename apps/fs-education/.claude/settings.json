@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s -c /tmp/claude-501/-Users-favor-Documents-workspace-personal-filestack-fs-education/1d52b6af-0044-4c8a-9775-eb2b97f770ee/scratchpad/cj.txt -b lec=\"lec_okafor\" -X POST http://localhost:3000/ -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s -b \"fs_edu_user=lec_okafor\" http://localhost:3000/lecturer -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s -b \"fs_edu_user=lec_okafor\" http://localhost:3000/lecturer)",
+      "Bash(curl -s -b \"fs_edu_user=lec_okafor\" http://localhost:3000/lecturer/assignments/asg_render_pipeline -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s -b \"fs_edu_user=lec_okafor\" http://localhost:3000/lecturer/assignments/new)",
+      "Bash(curl -s -b \"fs_edu_user=stu_bello\" http://localhost:3000/student -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s -b \"fs_edu_user=stu_bello\" http://localhost:3000/student)",
+      "Bash(curl -s -b \"fs_edu_user=stu_bello\" http://localhost:3000/student/assignments/asg_render_pipeline)",
+      "Bash(curl -s -b \"fs_edu_user=stu_bello\" http://localhost:3000/lecturer -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\")",
+      "Bash(curl -s http://localhost:3000/lecturer -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\")",
+      "Bash(curl -s -b \"fs_edu_user=lec_okafor\" http://localhost:3000/lecturer/assignments/asg_render_pipeline/annotate -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s -b \"fs_edu_user=lec_okafor\" http://localhost:3000/lecturer/submissions/nope -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s -b \"fs_edu_user=lec_okafor\" http://localhost:3000/lecturer -o /dev/null -w \"status %{http_code}\\\\n\")",
+      "Bash(curl -s -o /dev/null -w '%{http_code} size=%{size_download}\\\\n' http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__0cbk-n2._.css)",
+      "Bash(curl -s http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__0cbk-n2._.css)",
+      "Bash(grep -o 'NEXT_PUBLIC_FILESTACK_API_KEY=.\\\\{0,4\\\\}' .env.local)",
+      "Bash(curl -s http://localhost:3000/ -o /dev/null -w \"landing:    %{http_code}\\\\n\")",
+      "Bash(curl -s -b \"fs_edu_user=stu_bello\" http://localhost:3000/student -o /dev/null -w \"student:    %{http_code}\\\\n\")",
+      "Bash(curl -s -b \"fs_edu_user=lec_okafor\" http://localhost:3000/lecturer -o /dev/null -w \"lecturer:   %{http_code}\\\\n\")",
+      "Bash(curl -s -b \"fs_edu_user=stu_bello\" http://localhost:3000/student/assignments/asg_render_pipeline -o /dev/null -w \"assignment: %{http_code}\\\\n\")"
+    ]
+  }
+}

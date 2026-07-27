@@ -21,7 +21,6 @@ A complete real estate listing and management platform showcasing premium visual
 
 - **Features**: Property listings search and filters, admin dashboard for listing creation and management, interactive walkthrough tours, image gallery management, and an interactive **Filestack Transformation Playground** for cropping, resizing, and filtering property photos.
 - **Key Tech**: Next.js, Zustand (global state management), Tailwind CSS v4, Lucide Icons, Filestack JS SDK.
-
 ---
 
 ## 🛠️ Monorepo Structure
