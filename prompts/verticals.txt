@@ -1,0 +1,608 @@
+================================================================================
+FILESTACK USE-CASE VERTICALS
+================================================================================
+
+Ten industries whose core workflow is a file workflow, and which therefore make
+honest Filestack demos. Three are already built in apps/. The other seven are
+the next wave.
+
+Every entry states who buys it, what they are forced to build today, the
+Filestack surface it exercises, and the flagship app concept that becomes the
+article.
+
+House stack for every app in this repo: Next.js 16 (App Router, Server
+Actions), TypeScript, Tailwind v4, React 19, libSQL (local SQLite file in dev,
+Turso when hosted), Zustand for global client state, filestack-js loaded via a
+lazy dynamic import. No /api/upload route — bytes go browser to Filestack,
+metadata rides in on the Server Action. No image, video, PDF or OCR processing
+code anywhere in the repository.
+
+--------------------------------------------------------------------------------
+01. EDUCATION                                                    [fs-education]
+    STATUS: BUILT — "Fairmount College"
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+Universities, colleges, schools, bootcamps, online course platforms, tutoring
+marketplaces, and the LMS vendors selling to all of them.
+
+THE FILE PROBLEM
+Marking is a drawing problem. A student hands in a phone photo, a flatbed scan
+or a 12-page PDF, and the lecturer needs to circle the line where the proof
+went wrong. Doing that digitally normally means pdf.js in a web worker, a
+canvas renderer, a headless Chrome or Ghostscript job on the server, a bucket
+for rendered pages, and a cache so page 4 is not re-rendered on every open.
+That is a rendering pipeline, and none of it is the feature.
+
+FILE TYPES IN PLAY
+  - phone photos and flatbed scans of handwritten work
+  - multi-page PDF essays and problem sets
+  - DOCX submissions
+  - worksheet briefs and worked examples
+  - annotation overlays (transparent PNGs)
+
+FILESTACK SURFACE EXERCISED
+  - File Picker with googledrive / dropbox / onedrive sources — the essay is
+    never on the machine the student is submitting from
+  - `output=format:png,page:N,density:150` to rasterise any PDF page on demand
+  - `pdfinfo` for page counts without parsing a PDF
+  - `resize=width:1600,fit:max` for the annotation canvas, `fit:crop` for rows
+  - `client.upload` for the annotation overlay, so the student's file is never
+    modified
+
+CHARACTERISTIC EDGE CASES
+  - a submission arrives as four JPEGs of printed pages in the wrong order
+  - a 40-page PDF must paginate without loading 40 images
+  - the drawing overlay must line up with the render at every zoom level
+  - a student resubmits after marking has started
+
+DESIGN DIRECTION
+Academic calm: generous reading measure, tools that disappear when not in use,
+a marking canvas that feels like paper rather than software.
+
+FLAGSHIP APP CONCEPT
+A two-sided coursework portal where lecturers mark by drawing directly on the
+page and students read back their score, comments and marked-up pages.
+
+WHY THE ARTICLE WRITES ITSELF
+"We deleted the rendering pipeline." The rasteriser, the page cache and the
+bucket collapse into one URL with a page parameter.
+
+--------------------------------------------------------------------------------
+02. FILE SHARING, HOSTING & STORAGE                            [fs-filesharing]
+    STATUS: BUILT — "Fireshare"
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+WeTransfer-style send tools, client-delivery portals, internal file drops,
+digital asset handoff services, and any SaaS that has grown a "share a file"
+feature it did not want to build.
+
+THE FILE PROBLEM
+Sharing a file is trivially easy until you need it to be fast, expiring,
+previewable, virus-scanned and safe to put in front of the public internet.
+Then it is an upload service, a storage tier, a CDN, a preview generator, a
+link-expiry system and a moderation queue.
+
+FILE TYPES IN PLAY
+  - literally anything a user drags in
+  - image sets that need instant previews
+  - archives and documents that need a thumbnail and a size, fast
+  - short video that must preview without a download
+
+FILESTACK SURFACE EXERCISED
+  - Store API / `client.upload` with a hand-rolled drop zone
+  - `resize` and `output=format:webp` for on-the-fly previews from one handle
+  - `virus_detection` before a link is ever shareable
+  - Security Policies with `expiry` for links that die on schedule
+  - `zip` for multi-file sends
+
+CHARACTERISTIC EDGE CASES
+  - an upload finishes after the sender closes the tab
+  - a link is forwarded to someone the sender did not intend
+  - a preview is requested for a file type nothing renders natively
+  - the same file is uploaded twice and should not double-store
+
+DESIGN DIRECTION
+One-screen confidence: drop, watch it go, copy the link. Zero navigation, zero
+onboarding, no account required to be useful.
+
+FLAGSHIP APP CONCEPT
+An instant share tool with upload history, live transformations on image
+handles, and links with a visible expiry.
+
+WHY THE ARTICLE WRITES ITSELF
+The smallest possible app that still needs upload, storage, CDN, preview and
+moderation — five services, one SDK.
+
+--------------------------------------------------------------------------------
+03. REAL ESTATE                                                 [fs-realestate]
+    STATUS: BUILT — "Horizon Pro"
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+Estate agencies, property portals, short-let platforms, property management
+companies, commercial brokers, and the agents photographing houses on phones.
+
+THE FILE PROBLEM
+Property sells on imagery captured by non-photographers and served to buyers
+on mobile data. Every listing photo has to work as a grid thumbnail, a card, a
+gallery frame, a hero and a map pin. Agents shoot portrait, shoot dark, shoot
+crooked, and shoot 8MB per frame. The usual answer is a resize Lambda, a
+derivative bucket and an invalidation problem.
+
+FILE TYPES IN PLAY
+  - agent phone photography and professional shoots
+  - floor plans as PDF and image
+  - EPC certificates and legal packs
+  - walkthrough and drone video
+  - brochures for print and download
+
+FILESTACK SURFACE EXERCISED
+  - a preset ladder (thumbnail / card / hero / gallery) built from one handle
+  - `resize=fit:crop` + `output=format:webp` + `quality` for the responsive set
+  - `crop`, `rotate` and filter chains in a live transformation playground
+  - `enhance` to rescue an underexposed interior
+  - `watermark` on agency-owned imagery
+
+CHARACTERISTIC EDGE CASES
+  - a portrait phone photo must fill a landscape hero without ruining the room
+  - the same handle serves a 200px pin and a 2400px lightbox
+  - a floor plan PDF needs a preview image on the card
+  - a listing goes live before the photography is finished
+
+DESIGN DIRECTION
+Premium property portal: big confident imagery, restrained chrome, filters that
+feel instant, and a gallery that never janks.
+
+FLAGSHIP APP CONCEPT
+A listings platform with an admin dashboard and an interactive transformation
+playground where an agent sees exactly what the buyer will see.
+
+WHY THE ARTICLE WRITES ITSELF
+The derivative bucket, the resize worker and the cache invalidation queue all
+disappear behind one handle and a function that returns a string.
+
+--------------------------------------------------------------------------------
+04. HEALTHCARE, TELEMEDICINE & PATIENT INTAKE                   [fs-healthcare]
+    STATUS: NEXT
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+Clinics, telehealth platforms, dental and veterinary practices, physiotherapy
+groups, medical billing companies, and the patient portals bolted onto all of
+them.
+
+THE FILE PROBLEM
+Every clinical encounter starts with a pile of files somebody has to look at:
+an insurance card photographed at an angle in a car park, a referral faxed as a
+6-page TIFF, a wound photo taken in bad light, a consent packet nobody prints.
+Practices either buy a monolithic EHR that owns the workflow, or they build the
+intake pipeline themselves — rasterising, rotating, cropping, extracting text,
+stripping metadata and generating previews that load on a waiting-room tablet.
+
+FILE TYPES IN PLAY
+  - phone photos of insurance cards and IDs
+  - scanned referral letters, often multi-page TIFF
+  - multi-page PDF intake forms and consent packets
+  - clinical photography (wounds, dermatology, dental, orthodontic)
+  - lab reports as PDF
+  - short patient-recorded video of symptoms and range of motion
+
+FILESTACK SURFACE EXERCISED
+  - Picker with webcam and mobile capture so the patient photographs the card
+    inside the flow rather than emailing it afterwards
+  - `ocr` to lift member numbers, policy IDs and dates off cards and letters
+  - `output=format:png,page:N` + `pdfinfo` for consent packets in the browser
+  - `pixelate_faces` / `blur_faces` / `partial_pixelate` for de-identification
+  - `virus_detection` and `sfw` on anything a patient uploads
+  - Security Policies with short expiry — a clinical image URL is never a
+    permanent public link
+
+NON-NEGOTIABLE CONSTRAINTS
+  - treat every upload as if it carries PHI; no clinical image renders without
+    an expiring signed policy
+  - de-identification is a visible, auditable step, not a promise
+  - the original file is never mutated; redactions are separate overlays
+  - every view of a patient file is written to an access log the demo displays
+
+CHARACTERISTIC EDGE CASES
+  - a 24MB photo of a document from a modern phone camera
+  - an insurance card photographed upside down, needing rotate-before-OCR
+  - OCR returns confident nonsense and a human must correct it with the source
+    visible
+  - a file finishes uploading after the patient closes the tab
+
+DESIGN DIRECTION
+Calm clinical software: high contrast, generous hit targets for tablets, no
+decorative colour, status carried by shape and label rather than hue alone.
+
+FLAGSHIP APP CONCEPT
+A patient-intake console where an insurance card photographed in the car park
+becomes structured, verified, de-identified data before the appointment starts.
+
+WHY THE ARTICLE WRITES ITSELF
+"We deleted the TIFF/PDF rasterising service and the OCR box." The entire
+document tier is a URL.
+
+--------------------------------------------------------------------------------
+05. LEGAL, COMPLIANCE & PROFESSIONAL SERVICES                        [fs-legal]
+    STATUS: NEXT
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+Law firms, in-house counsel, paralegal teams, conveyancers, immigration
+practices, contract-lifecycle vendors, and the eDiscovery tooling around them.
+
+THE FILE PROBLEM
+Legal work is document work and the document is always the wrong shape.
+Discovery arrives as thousands of scans with no text layer. A client signs page
+7 of 40 and photographs it. An exhibit bundle must be assembled, numbered,
+redacted and produced in a fixed page order with nothing leaking through the
+black boxes. Firms buy six-figure review platforms or make associates do it by
+hand at 2am, because building OCR, pagination, redaction and PDF assembly is a
+product in itself.
+
+FILE TYPES IN PLAY
+  - scanned discovery sets with no text layer
+  - 40-page contracts as PDF and DOCX
+  - photographed signature pages
+  - exhibit images and screenshots submitted as evidence
+  - recorded deposition and client-intake video
+
+FILESTACK SURFACE EXERCISED
+  - `ocr` to make a scanned bundle searchable without running Tesseract
+  - `pdfinfo` then `output=format:png,page:N` for page-by-page review
+  - `partial_pixelate` and opaque overlay compositing for redactions that
+    survive export
+  - `output=format:pdf` to fold DOCX exhibits into the bundle's page order
+  - `zip` for a single production download
+  - Security Policies with `expiry` and `path` so a produced link dies on time
+
+NON-NEGOTIABLE CONSTRAINTS
+  - a redaction is permanent in the produced artefact and reversible only for
+    privileged roles — show both paths explicitly
+  - every document carries an immutable audit trail: who opened it, when, what
+    they exported
+  - page order and numbering are deterministic across regenerations
+  - privileged material never renders through an unsigned URL
+
+CHARACTERISTIC EDGE CASES
+  - a 400-page PDF must paginate without loading 400 images
+  - OCR text and rendered page must stay aligned when the reviewer searches
+  - two reviewers redact the same page at the same time
+  - a produced link is forwarded outside the firm and must already be dead
+
+DESIGN DIRECTION
+Dense professional tooling: keyboard-first, monospace metadata, tight vertical
+rhythm, page thumbnails in a rail, no marketing gloss anywhere.
+
+FLAGSHIP APP CONCEPT
+A discovery review desk where a scanned, text-less bundle becomes searchable,
+redactable and produceable without a single processing service.
+
+WHY THE ARTICLE WRITES ITSELF
+OCR, rasterising, redaction burn-in and PDF assembly are four infrastructure
+projects here — and four task names in a URL.
+
+--------------------------------------------------------------------------------
+06. E-COMMERCE, MARKETPLACES & RETAIL                            [fs-ecommerce]
+    STATUS: NEXT
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+Online stores, multi-vendor marketplaces, print-on-demand shops, D2C brands,
+resale platforms, and the merchandising teams fighting their own catalogue.
+
+THE FILE PROBLEM
+Product imagery is the store, and it is the worst-behaved asset in the
+business. Sellers upload 8MB portrait phone photos with a bedroom in the
+background. The PLP needs a square crop, the PDP needs a zoomable hero, the
+email needs a JPEG because Outlook, and the whole set needs to be WebP or AVIF
+on mobile or Core Web Vitals collapses. The usual answer is a resize Lambda, a
+bucket of derivatives nobody can invalidate, and a merchandiser in Photoshop.
+
+FILE TYPES IN PLAY
+  - seller-supplied product photography of wildly varying quality
+  - user-generated review photos and unboxing video
+  - brand asset kits and logo files
+  - bulk CSV catalogue imports carrying image URLs
+  - size charts and spec sheets as PDF
+  - print-ready artwork for customisable products
+
+FILESTACK SURFACE EXERCISED
+  - `resize=fit:crop` with smart cropping so a portrait photo fills a square
+    tile without decapitating the product
+  - `output=format:webp` / `format:avif` + `quality` + `compress` for a
+    responsive srcset built from one handle
+  - `enhance` and `upscale` to rescue an underexposed listing photo
+  - `watermark` for marketplace-owned imagery and press kits
+  - `sfw` + `tags` to auto-moderate and auto-categorise UGC
+  - Picker `transformations` (crop, circle, rotate) so the seller fixes their
+    own photo before it reaches the catalogue
+
+NON-NEGOTIABLE CONSTRAINTS
+  - no derivative is ever stored; every size is a URL built at render time
+  - UGC passes an automated moderation gate before it is publicly visible
+  - the seller sees the exact crop the shopper will see, at upload time
+  - image weight budgets are stated and visible — show the bytes saved
+
+CHARACTERISTIC EDGE CASES
+  - a 12MB portrait photo destined for a square grid
+  - one handle serving a 200px thumbnail and a 2400px zoom
+  - a bulk import of 500 image URLs of unknown dimensions
+  - a logo that must sit on white and black without a halo
+
+DESIGN DIRECTION
+Retail-grade polish: big imagery, confident type scale, instant hover-zoom,
+fast skeletons, and a visible performance story.
+
+FLAGSHIP APP CONCEPT
+A seller onboarding flow where a bad phone photo becomes a full responsive,
+moderated, merchandised product gallery in one pass.
+
+WHY THE ARTICLE WRITES ITSELF
+Core Web Vitals as a file-delivery story, with the derivative bucket deleted.
+
+--------------------------------------------------------------------------------
+07. HR, RECRUITING & WORKFORCE MANAGEMENT                              [fs-hr]
+    STATUS: NEXT
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+Applicant tracking systems, staffing agencies, HR platforms, contractor
+marketplaces, background-check vendors, and every people-ops team running
+onboarding out of a shared drive.
+
+THE FILE PROBLEM
+Hiring runs on documents from strangers. A CV arrives as DOCX, PDF, a Drive
+link, or a photo of a printout. A portfolio is 40 images and a video reel.
+Onboarding needs signed contracts, photo ID, proof of address, right-to-work
+documents and a headshot that fits the org chart — collected from someone who
+has not started yet, on a phone, in a country you have never shipped to.
+
+FILE TYPES IN PLAY
+  - CVs as PDF, DOCX and phone photos
+  - portfolios: image sets, PDFs, video reels
+  - government ID and right-to-work documents
+  - signed offer letters and contracts
+  - headshots of every conceivable framing
+  - certifications and licence scans
+
+FILESTACK SURFACE EXERCISED
+  - `ocr` to parse a CV into structured fields whatever format it arrived in
+  - `output=format:pdf` to normalise every applicant document into one
+    reviewable format
+  - `detect_faces` + `crop_faces` to turn any headshot into a consistent avatar
+  - Picker with googledrive / dropbox / onedrive / url sources, because the CV
+    is never on the machine the candidate is applying from
+  - `virus_detection` on every inbound applicant file — this is unsolicited
+    content from the public internet
+  - `pixelate_faces` and field masking for blind-screening modes
+
+NON-NEGOTIABLE CONSTRAINTS
+  - blind screening is a real mode and the mask is server-side
+  - identity documents live behind expiring signed URLs with a stated retention
+    schedule
+  - every applicant file is virus-scanned before a recruiter can open it
+  - the candidate can see and delete everything the system holds
+
+CHARACTERISTIC EDGE CASES
+  - a CV arriving as four JPEGs of printed pages in the wrong order
+  - a full-body photo that still has to produce a square avatar
+  - a candidate uploading from Drive on a phone with no local file
+  - an 800MB portfolio video that must preview without downloading
+
+DESIGN DIRECTION
+Calm operational UI: queue-shaped, keyboard-navigable, heavy on status chips
+and empty-state guidance, warm rather than corporate.
+
+FLAGSHIP APP CONCEPT
+An applicant desk where any CV format becomes the same structured,
+virus-scanned, blind-screenable candidate record.
+
+WHY THE ARTICLE WRITES ITSELF
+Document normalisation and CV parsing are what every ATS builds badly; both
+collapse into upload-time URL tasks.
+
+--------------------------------------------------------------------------------
+08. MEDIA, PUBLISHING & CREATOR PLATFORMS                           [fs-media]
+    STATUS: NEXT
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+Digital newsrooms, magazine and blog platforms, podcast networks, video
+creators, photographers, newsletter tools, and the CMS teams serving them.
+
+THE FILE PROBLEM
+Editorial teams ship on deadline with assets they do not control. A
+photographer sends 200 huge JPEGs, a reporter drops 4K phone video into Slack,
+a syndication partner supplies a hero at the wrong aspect ratio for every
+placement. Publishing means one asset rendered a dozen ways — social cards,
+thumbnails, dark-mode variants, watermarked press copies — plus rights metadata
+that must travel with the file.
+
+FILE TYPES IN PLAY
+  - high-resolution editorial photography
+  - phone-shot field video and vertical clips
+  - podcast audio in inconsistent formats
+  - illustrations and infographics
+  - press kits and embargoed asset bundles
+  - archival scans of print issues
+
+FILESTACK SURFACE EXERCISED
+  - one handle rendering the whole art-direction matrix: `resize`, `crop`,
+    smart crop, `output=format:webp`, `quality`, `compress`
+  - `video_convert` for web renditions and poster frames from a phone original
+  - `audio_convert` to normalise podcast submissions
+  - `watermark` for press and preview copies that must not circulate clean
+  - `exif` to read capture data, credit and orientation off the asset
+  - `tags` for automatic asset-library categorisation and search
+
+NON-NEGOTIABLE CONSTRAINTS
+  - credit and licence metadata travel with the asset and render wherever it
+    appears
+  - embargoed assets are reachable only through short-expiry signed URLs
+  - every placement is generated from the same handle, never re-uploaded
+  - the original is archival and untouched; every rendition is derived
+
+CHARACTERISTIC EDGE CASES
+  - a 6000px hero serving a 400px card and a 1200px social image from one crop
+    decision
+  - a vertical phone video needing a 16:9 poster frame
+  - an embargo that lifts at a specific timestamp
+  - an asset republished years later when the rendition sizes have changed
+
+DESIGN DIRECTION
+Editorial confidence: real typographic hierarchy, full-bleed imagery,
+restrained chrome, and a dark mode that is designed rather than inverted.
+
+FLAGSHIP APP CONCEPT
+A newsroom asset desk where one uploaded original satisfies every downstream
+placement with no stored derivatives.
+
+WHY THE ARTICLE WRITES ITSELF
+The art-direction matrix — normally a build step, a bucket and a cache —
+becomes a function that returns a string.
+
+--------------------------------------------------------------------------------
+09. INSURANCE, CLAIMS & RISK ASSESSMENT                        [fs-insurance]
+    STATUS: NEXT
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+Insurers, MGAs, claims-management platforms, roadside and home-emergency
+networks, loss adjusters, and warranty teams inside manufacturers and
+retailers.
+
+THE FILE PROBLEM
+A claim is a bundle of evidence photographed by an upset person at the worst
+moment of their week. Twelve photos of a bumper, a policy document, a receipt,
+a police report, a video walkthrough of a flooded kitchen. Adjusters need to
+view, compare, annotate and verify all of it — including whether the photo was
+taken where and when the claimant says — while fraud teams need the metadata
+the claimant did not know they were sending.
+
+FILE TYPES IN PLAY
+  - first-notice-of-loss photo sets from phones
+  - damage walkthrough video
+  - receipts and proof-of-purchase scans
+  - police and incident reports as PDF
+  - policy schedules and endorsements
+  - pre-existing condition photos from policy inception
+
+FILESTACK SURFACE EXERCISED
+  - `exif` for capture timestamp, device and geolocation as a fraud signal the
+    app surfaces honestly
+  - `ocr` on receipts and reports for amounts, dates and reference numbers
+  - `resize` + `output` to build a fast comparison grid from a dozen 10MB
+    phone photos
+  - annotation overlays uploaded via `client.upload` so adjuster markup never
+    modifies the claimant's evidence
+  - `virus_detection` and `sfw` on inbound claim uploads
+  - `zip` to hand a complete, ordered evidence bundle to a third party
+
+NON-NEGOTIABLE CONSTRAINTS
+  - claimant evidence is immutable; markup is always a separate overlay
+  - EXIF-derived signals are shown with provenance and never silently used to
+    deny a claim
+  - the bundle handed to a third party is reproducible and stable
+  - every adjuster action is timestamped in a visible audit trail
+
+CHARACTERISTIC EDGE CASES
+  - twelve 10MB photos uploaded over a bad mobile connection at the roadside
+  - a photo with no EXIF at all because it went through a messaging app
+  - the same damage compared side by side across two dates
+  - a video walkthrough reviewable without a full download
+
+DESIGN DIRECTION
+Serious, fast, evidence-first: comparison grids, timestamps everywhere, muted
+palette, zero playfulness in the claim path and real warmth in the claimant
+path.
+
+FLAGSHIP APP CONCEPT
+A claims desk where roadside phone photos become a verified, annotated,
+comparable evidence bundle without touching the originals.
+
+WHY THE ARTICLE WRITES ITSELF
+Metadata extraction, evidence rendering and annotation-without-mutation are
+exactly the three things claims software gets wrong.
+
+--------------------------------------------------------------------------------
+10. CONSTRUCTION, FIELD SERVICES & AEC                      [fs-construction]
+    STATUS: NEXT
+--------------------------------------------------------------------------------
+
+WHO IT IS FOR
+General contractors, subcontractors, architects and engineers, facilities and
+property maintenance teams, utilities, surveyors, and the field-service
+platforms selling to all of them.
+
+THE FILE PROBLEM
+The site generates hundreds of photos a day and a drawing set nobody can open
+on a phone. Progress photos, defect snags, delivery dockets, safety
+observations, and a 200MB PDF drawing set that must be marked up in a
+Portakabin on 3G. Site software either becomes a photo dump with no structure,
+or a drawing viewer that needs a laptop — and the daily report still gets
+assembled by hand at 6pm.
+
+FILE TYPES IN PLAY
+  - geotagged site progress photos
+  - large-format PDF drawing sets and revisions
+  - snag and defect photos with markup
+  - delivery dockets and signed timesheets
+  - safety observation photos and toolbox-talk records
+  - site walkthrough video
+
+FILESTACK SURFACE EXERCISED
+  - `pdfinfo` + `output=format:png,page:N,density:150` to make a large-format
+    drawing set pannable on a phone
+  - `exif` for capture location and time so a photo self-files against the
+    right area and date
+  - overlay annotations uploaded separately so the issued revision stays
+    canonical
+  - `resize` presets that keep a 200-photo daily gallery scrolling on site
+    Wi-Fi
+  - `zip` to export a dated report bundle for the client
+  - Picker with mobile capture and background upload for a phone that keeps
+    losing signal
+
+NON-NEGOTIABLE CONSTRAINTS
+  - drawing revisions are immutable and versioned; markup never edits the
+    issued drawing
+  - every photo keeps capture time and location, and the app shows when they
+    are missing
+  - the daily report is generated from the day's records, never typed twice
+  - usable one-handed, in gloves, on a bad connection
+
+CHARACTERISTIC EDGE CASES
+  - a drawing set that is 200MB and 80 pages
+  - photos captured offline that sync an hour later
+  - two revisions of the same drawing compared page for page
+  - a daily report covering 300 photos without becoming unreadable
+
+DESIGN DIRECTION
+High-contrast field UI: enormous tap targets, sunlight-readable, offline and
+sync state always visible, structure over decoration.
+
+FLAGSHIP APP CONCEPT
+A site console where an 80-page drawing set and 300 phone photos become a
+markable, filed, exportable day's record.
+
+WHY THE ARTICLE WRITES ITSELF
+Rendering large-format PDFs for a phone is a genuine engineering project, and
+it is one URL task with a page parameter.
+
+================================================================================
+NEXT BATCH — CANDIDATE VERTICALS
+================================================================================
+  - Fintech, banking, accounting & expenses — receipt OCR, KYC, statements
+  - Travel, hospitality & events — same-night galleries, ID capture, menus
+  - Government, civic services & nonprofits — permits, FOIA redaction, access
+  - Automotive & dealerships — VIN scans, condition reports, 360° walkarounds
+  - Logistics & freight — proof of delivery, damage photos, customs paperwork
+  - Manufacturing & QA — defect capture, inspection sheets, CAD previews
+  - Fitness & wellness — form-check video, progress photos, intake forms
+  - Agriculture & agritech — crop scouting imagery, drone surveys, compliance
+  - Gaming & UGC communities — avatar pipelines, mod assets, moderation
+  - Music & audio — stem delivery, mastering handoff, artwork specs

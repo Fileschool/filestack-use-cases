@@ -1,0 +1,2639 @@
+================================================================================
+FILESTACK DEMO-APP PROMPT LIBRARY
+300 build prompts across 10 verticals
+================================================================================
+
+Each prompt is a complete build brief for one demo application in the
+fileschool monorepo, in the shape of the apps already in apps/: a Next.js 16
+app where Filestack replaces an entire processing tier, plus the ARTICLE.md
+that explains what was deleted.
+
+HOW TO USE ONE
+  1. Copy a single prompt block, from its PROMPT header to its ARTICLE line.
+  2. Hand it to a coding agent from the repo root, or use it as the spec for a
+     hand-built app.
+  3. The STACK line is deliberately near-identical in every prompt. That is the
+     monorepo contract, not filler. Everything else is the concept.
+
+THE CONTRACT EVERY PROMPT INHERITS
+  - Next.js 16 (App Router, Server Actions), TypeScript strict, Tailwind v4,
+    React 19. Read node_modules/next/dist/docs/ before writing code — this
+    Next.js version has breaking changes.
+  - libSQL for data: a local SQLite file in dev, Turso when TURSO_DATABASE_URL
+    is set, one code path for both. Seed on first run.
+  - Filestack does all upload, storage, delivery and processing. No image,
+    video, PDF or OCR processing code in the repo. No /api/upload route —
+    bytes go browser to Filestack, metadata rides in on the Server Action.
+  - filestack-js loaded by lazy dynamic import, client memoised at module
+    level, NEXT_PUBLIC_FILESTACK_API_KEY read on the client.
+  - Degrade, never explode: with no API key the app still runs and the pickers
+    render a "set your key" hint.
+  - CONTRIBUTING.md conventions: components/features/, forms/, modals/,
+    interfaces/ with the I prefix, Zustand in store/, named exports, files
+    under 200 lines.
+  - Ship it looking finished: real empty states, skeletons, keyboard support,
+    visible focus rings, a designed dark mode, no lorem ipsum.
+
+Vertical context — buyers, constraints, design direction, Filestack surface —
+is in verticals.txt alongside this file.
+
+
+################################################################################
+################################################################################
+##  01 · EDUCATION  —  30 PROMPTS  [fs-education]
+################################################################################
+################################################################################
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 001 · EDUCATION · Rubric Room
+app slug: apps/fs-edu-rubric-room
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. A grade out of 100 tells a student nothing. Rubrics were invented to
+fix that, and then got buried in spreadsheets that nobody links back to the
+actual work. The marker knows exactly which paragraph failed the "evidence"
+criterion, but the tooling gives them a dropdown and a comment box, so the
+connection between the mark and the page is lost the moment it is made.
+
+BUILD. A rubric-driven marking desk. A lecturer defines a rubric — criteria,
+level descriptors, weights — and attaches it to an assignment. Students submit
+work as photos, scans, PDFs or documents. When the lecturer opens a submission,
+the rubric sits in a rail beside the rendered page, and selecting a criterion
+puts the canvas into anchor mode: any mark they draw is bound to that criterion.
+The final grade is computed from the rubric, and the student sees each criterion
+score with a "show me where" button that jumps to the exact region of the exact
+page that earned it.
+
+ROLES.
+  - Lecturer — builds rubrics, marks submissions, anchors evidence to criteria.
+  - Student — submits work, reads criterion-by-criterion feedback with evidence.
+  - Course lead — reuses rubric templates across assignments.
+
+SCREENS.
+  - Rubric builder with live weight totals and level descriptors.
+  - Assignment list with submission counts and marking progress.
+  - Marking canvas: rendered page, criterion rail, anchored annotation tools.
+  - Student result view with per-criterion scores and jump-to-evidence.
+  - Rubric template library.
+
+CENTREPIECE. The anchor-mode canvas. Selecting "Use of evidence" tints the
+toolbar, and every box drawn while it is active becomes a citation for that
+criterion. The student's result page then reverses it: click a criterion, the
+page scrolls and the region pulses. Marking and feedback become the same act.
+
+FILESTACK.
+  - Picker with local, url, googledrive, dropbox and onedrive sources for
+    submissions.
+  - `pdfinfo` for page counts, `output=format:png,page:N,density:150` to render
+    any page of a PDF submission on demand.
+  - `resize=width:1600,fit:max` for the canvas, `fit:crop` for thumbnails.
+  - Annotation overlays pushed up with `client.upload` as transparent PNGs —
+    one overlay per criterion so they can be toggled independently.
+  - `cache=expiry:max` on download URLs.
+
+DATA. course; assignment; rubric; criterion; submission; annotation (with
+criterion_id, page, overlay handle); criterion_score.
+
+STACK. Next.js 16 App Router with Server Actions for every mutation, TypeScript
+strict, Tailwind v4, libSQL/Turso, Zustand for canvas tool state only. No
+upload route. Seed with two courses, one rubric and four submissions.
+
+EDGE CASES.
+  - A rubric is edited after marking has begun — existing scores must not
+    silently change.
+  - A submission is four JPEGs of printed pages in the wrong order.
+  - Overlays for eight criteria on one page must not fight for z-order.
+  - A student resubmits after partial marking.
+
+DONE WHEN.
+  - A lecturer can mark a 6-page PDF criterion by criterion without the page
+    ever leaving the browser.
+  - The student result view jumps to the annotated region for every criterion.
+  - The original submission file is byte-identical to what was uploaded.
+  - Weights always total 100 and the UI refuses to save when they do not.
+
+ARTICLE. Rubrics fail because the mark is divorced from the page. Here the
+overlay is per-criterion, and the "why" is one URL away.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 002 · EDUCATION · Lab Notebook
+app slug: apps/fs-edu-lab-notebook
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Science coursework is evidence coursework. A student runs a titration,
+photographs the burette, records the colour change, and writes it up — and the
+lab report becomes a Word document with pasted images at 4MB each, emailed to a
+demonstrator who cannot tell whether the photo was taken during the session or
+copied from a friend. The evidence and the write-up live in different places
+and neither proves anything about the other.
+
+BUILD. A structured lab notebook where each experiment is a sequence of steps,
+and each step accepts typed observations plus photo or video evidence captured
+in the session. Entries are timestamped and locked once submitted. The
+demonstrator reviews a report as a timeline: step, observation, evidence
+thumbnail, capture time, with a flag when a photo's EXIF timestamp falls
+outside the booked session window. Reports export as a single ordered document.
+
+ROLES.
+  - Student — works through the protocol, captures evidence per step.
+  - Demonstrator — reviews timelines, flags anomalies, marks the report.
+  - Technician — publishes protocols and session windows.
+
+SCREENS.
+  - Protocol library with session windows and equipment lists.
+  - Live notebook: step-by-step capture with a persistent camera button.
+  - Report timeline for review, with EXIF flags inline.
+  - Marking view with per-step comments.
+  - Export view producing an ordered bundle.
+
+CENTREPIECE. The evidence timeline. Every step is a row: what the protocol
+asked, what the student wrote, what they photographed, and when the camera says
+they photographed it. Mismatches between session window and capture time are
+shown as an honest, explainable flag — never an accusation.
+
+FILESTACK.
+  - Picker with webcam and mobile capture so evidence is taken in the lab, not
+    remembered afterwards.
+  - `exif` to read capture timestamp and device off each photo.
+  - `resize=width:1200,fit:max` for the timeline, `fit:crop` squares for rows.
+  - `output=format:webp` + `quality` so a 30-step report still loads on campus
+    Wi-Fi.
+  - `zip` to export the full evidence set with the report.
+
+DATA. protocol; step; session; notebook_entry; evidence_item (handle, exif
+timestamp, device); review_comment; report_export.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. filestack-js lazily imported; EXIF read through the CDN task, not
+a client-side parser. Seed with one full worked experiment.
+
+EDGE CASES.
+  - A photo has no EXIF because it came through a messaging app.
+  - The student captures evidence offline and it uploads twenty minutes later.
+  - A step is completed out of order.
+  - A video of a reaction is 400MB and must preview without downloading.
+
+DONE WHEN.
+  - A full experiment can be captured on a phone, one step at a time.
+  - The timeline shows capture time for every item and says so plainly when it
+    is missing.
+  - A submitted report is immutable and the export reproduces it exactly.
+  - The demonstrator can mark without downloading anything.
+
+ARTICLE. Provenance for coursework evidence, with no metadata parser in the
+repo — `exif` is a URL task and the honest flag is four lines of logic.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 003 · EDUCATION · Crit Board
+app slug: apps/fs-edu-crit-board
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Art and design education runs on the crit: work pinned to a wall,
+everyone standing around it, comments landing on specific parts of specific
+pieces. Move that online and it becomes a video call where six people describe
+the top-left corner in words. The spatial, comparative nature of a crit — this
+one next to that one, this detail versus that detail — is exactly what
+general-purpose tools destroy.
+
+BUILD. A digital crit wall. A tutor creates a crit session and students pin
+work to it: images, PDFs of layouts, photographs of physical models. The wall is
+a zoomable board where pieces can be arranged, grouped and compared side by
+side. Anyone in the session can drop a pin comment on a precise point of a
+precise piece. Comments thread, resolve, and are exportable as a feedback sheet
+per student.
+
+ROLES.
+  - Tutor — creates sessions, arranges the wall, leads the crit.
+  - Student — pins work, comments on peers, reads their own feedback sheet.
+  - Visiting critic — comment-only access via a share link.
+
+SCREENS.
+  - Crit wall: zoomable, pannable board of pinned work.
+  - Piece detail with full-resolution zoom and pin comments.
+  - Compare mode: two or four pieces locked side by side.
+  - Per-student feedback sheet.
+  - Session setup and invite links.
+
+CENTREPIECE. Compare mode. Select two pieces and they lock into a split view
+with synchronised zoom, so a tutor can pull up the same detail on both at once.
+The zoom is served straight from the handle at the resolution needed, so a
+2400px crop appears instantly without ever having loaded the full original.
+
+FILESTACK.
+  - Picker with `transformations: { crop, rotate }` so students straighten a
+    photographed model before pinning it.
+  - A resolution ladder from one handle: `resize=width:320` for the board,
+    `width:1200` for detail, `width:2400` for zoom.
+  - `output=format:png,page:N` so a multi-page layout PDF pins as pages.
+  - `output=format:webp` + `quality:82` for board tiles.
+  - Pin comments stored as coordinates, never burned into the image.
+
+DATA. crit_session; piece (handle, mimetype, board position); pin_comment
+(piece_id, x, y, thread); participant; feedback_sheet.
+
+STACK. Next.js 16 App Router, Server Actions, Tailwind v4, Zustand for board
+viewport and selection state, libSQL/Turso. Board transforms are CSS, image
+resolution comes from the CDN. Seed with a populated wall of eight pieces.
+
+EDGE CASES.
+  - Forty pieces on one wall must not load forty full-resolution images.
+  - A photographed model is shot at an angle and needs rotation before pinning.
+  - Two people comment on the same point simultaneously.
+  - A visiting critic opens the link with no account.
+
+DONE WHEN.
+  - The board scrolls and zooms smoothly with forty pieces pinned.
+  - Compare mode keeps two pieces in synchronised zoom.
+  - Every pin comment resolves to an exact coordinate on an exact piece.
+  - Feedback sheets export per student with the pinned context intact.
+
+ARTICLE. A zoomable comparison wall is a tiling and resolution problem. One
+handle plus a width parameter is the entire tiling strategy.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 004 · EDUCATION · Blind Peer Review
+app slug: apps/fs-edu-peer-review
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Peer review teaches more than marking does, and almost nobody runs it
+properly because the logistics are brutal: collect the work, strip the names,
+distribute it so nobody reviews their friend, collect the reviews, strip those
+names too, return them, and make sure the student who wrote "good job" gets
+told that is not a review. Every step is a place for a name to leak.
+
+BUILD. An anonymised peer review round. Students submit work; the system
+allocates each submission to N reviewers with no overlap and no self-review;
+reviewers see the work with identifying regions masked and complete a structured
+review form with inline annotations. Authors receive aggregated, anonymised
+feedback. The tutor sees everything, plus a review-quality score so lazy reviews
+are visible.
+
+ROLES.
+  - Student author — submits, later reads aggregated anonymous feedback.
+  - Student reviewer — reviews allocated work under anonymity.
+  - Tutor — configures the round, sees the unmasked truth, grades reviews.
+
+SCREENS.
+  - Round setup: deadlines, reviewers per submission, review form builder.
+  - Reviewer queue with allocated work.
+  - Review canvas: masked page render, structured form, inline annotations.
+  - Author feedback view, aggregated and anonymised.
+  - Tutor overview with allocation map and review-quality scores.
+
+CENTREPIECE. The masking layer. A submission's name block is masked server-side
+before the reviewer ever receives a URL — the render they get is a transformed
+image with the identifying region obscured, not a full image with CSS over the
+top. The tutor can toggle the unmasked view; the reviewer has no path to it.
+
+FILESTACK.
+  - `output=format:png,page:N` to render submission pages for review.
+  - `partial_pixelate` over the declared name region so masking is baked into
+    the delivered image.
+  - Signed Security Policies so a reviewer cannot hand-edit a URL into the
+    unmasked original.
+  - Annotation overlays uploaded via `client.upload`, one per reviewer.
+  - `resize` presets for queue thumbnails.
+
+DATA. round; submission; allocation; review; review_annotation; mask_region;
+review_quality_score.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. All URL construction for masked renders happens server-side.
+Seed with a completed round so the aggregate view has something in it.
+
+EDGE CASES.
+  - A student writes their name inside the body text, not the header.
+  - An odd number of submissions makes clean allocation impossible.
+  - A reviewer misses the deadline and the round must still close.
+  - A reviewer submits a one-word review.
+
+DONE WHEN.
+  - No reviewer-facing URL can be manipulated into an unmasked render.
+  - Allocation never assigns a student their own work.
+  - Authors see aggregated feedback with no reviewer identity anywhere.
+  - The tutor can see and grade every review.
+
+ARTICLE. Anonymity that survives DevTools. The mask is in the transformation,
+so the unmasked bytes are never delivered in the first place.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 005 · EDUCATION · Worksheet Snap
+app slug: apps/fs-edu-worksheet-snap
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Primary and secondary homework is paper. The teacher hands out a
+worksheet, the child does it at the kitchen table, and the parent photographs it
+at 9pm at an angle, in artificial light, with the edge of a plate in frame. The
+teacher then opens thirty of those on a Sunday, each one rotated differently,
+half of them too dark to read.
+
+BUILD. A homework capture app built for parents and children, where the capture
+step does the work. The child or parent photographs the sheet; the app
+straightens, crops to the page, brightens it and shows the cleaned result before
+submission, with a retake option. The teacher gets a uniform grid of readable,
+identically-framed pages, can tick them off in a keyboard-driven flow, and can
+draw a tick, a star or a short note on any of them.
+
+ROLES.
+  - Parent or pupil — photographs homework, checks the cleaned preview, submits.
+  - Teacher — reviews a uniform grid, marks quickly, sends stickers and notes.
+  - Head of year — sees completion rates per class.
+
+SCREENS.
+  - Capture flow: camera, auto-clean preview, retake or submit.
+  - Pupil homework history with teacher stickers.
+  - Teacher grid view, one class, one assignment, keyboard-driven.
+  - Quick-mark canvas with tick, star, circle and note tools.
+  - Class completion dashboard.
+
+CENTREPIECE. The clean-up preview. Between shutter and submit, the app shows
+the corrected page — deskewed, cropped, brightened — beside a "retake" button.
+Parents submit something legible because they can see it is legible, and the
+teacher's Sunday stops being an exercise in squinting.
+
+FILESTACK.
+  - Picker with webcam and mobile capture, `transformations: { crop, rotate }`
+    exposed to the parent for the manual case.
+  - `enhance` and `modulate` for brightness and contrast recovery on dark
+    kitchen-table photos.
+  - `rotate` applied from the chosen orientation.
+  - `resize=width:1400,fit:max` for the marking canvas, `fit:crop` for the grid.
+  - `sfw` on parent-submitted images as a basic safety gate.
+
+DATA. class; pupil; assignment; capture (original handle, applied transform
+chain); mark; sticker; completion_record.
+
+STACK. Next.js 16 App Router, Server Actions, Tailwind v4, libSQL/Turso. The
+transform chain is stored as a string and re-applied at render — the original
+photo is never replaced. Mobile-first layout, large tap targets throughout.
+
+EDGE CASES.
+  - The photo is taken in portrait but the sheet is landscape.
+  - A parent submits a photo of the wrong worksheet.
+  - Two children in one household share a device.
+  - The photo is 18MB straight off a modern phone.
+
+DONE WHEN.
+  - Capture-to-submit works one-handed on a phone in under twenty seconds.
+  - The teacher grid shows thirty uniformly framed, readable pages.
+  - Marking thirty pieces is possible without the mouse.
+  - The original photo remains retrievable and unmodified.
+
+ARTICLE. Image clean-up as a UX problem, not a CV problem. Deskew, crop and
+brighten are a chain of URL tasks the parent approves before submitting.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 006 · EDUCATION · Thesis Desk
+app slug: apps/fs-edu-thesis-desk
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. A dissertation is written over a year in twenty drafts, each one
+emailed to a supervisor as "chapter3_v4_FINAL_revised.docx". Supervisor comments
+live in tracked changes in whichever copy they replied to. Nobody can answer the
+only question that matters at the viva: what changed between draft five and
+draft six, and did the student act on the feedback?
+
+BUILD. A supervision desk built around chapter versions. Students upload each
+draft; every version is retained, rendered page by page and diffed against its
+predecessor at the page level. Supervisors comment on specific pages of specific
+versions. Every comment carries a state — open, addressed, or dismissed with a
+reason — and the student's next upload prompts them to link each new version to
+the comments it answers.
+
+ROLES.
+  - Postgraduate student — uploads drafts, links revisions to feedback.
+  - Supervisor — reads versions, comments on pages, tracks open threads.
+  - Examiner — reads the final version with the supervision history attached.
+
+SCREENS.
+  - Chapter timeline: every version with date, page count and comment counts.
+  - Version reader with page navigation and margin comments.
+  - Side-by-side version comparison.
+  - Open-threads dashboard across all chapters.
+  - Submission bundle assembly.
+
+CENTREPIECE. The version comparison. Two drafts, page thumbnails rails on both
+sides, scroll-locked, with pages the student has flagged as changed highlighted.
+Supervisors stop reading a whole chapter again to find three altered paragraphs.
+
+FILESTACK.
+  - Picker accepting PDF and DOCX from local, Drive and OneDrive.
+  - `output=format:pdf` to normalise DOCX drafts into one readable format.
+  - `pdfinfo` for page counts per version.
+  - `output=format:png,page:N,density:150` to render pages on demand for both
+    the reader and the comparison rails.
+  - `zip` to assemble the final submission bundle with supervision history.
+
+DATA. thesis; chapter; version (handle, page_count, uploaded_at); page_comment
+(version_id, page, state); revision_link; submission_bundle.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Versions are append-only; nothing is ever overwritten. Seed with
+a chapter at version four with a realistic comment history.
+
+EDGE CASES.
+  - A 180-page thesis must paginate without loading 180 renders.
+  - A DOCX and a PDF version of the same draft are both uploaded.
+  - A comment refers to a page that no longer exists in the next version.
+  - A supervisor comments while the student is uploading a new version.
+
+DONE WHEN.
+  - Every version ever uploaded is still readable, page by page.
+  - Comparison view scroll-locks two versions with synchronised page numbers.
+  - Every comment has an explicit state and an audit of who changed it.
+  - The final bundle contains the thesis and its full supervision history.
+
+ARTICLE. Version-aware document review with no document conversion service:
+DOCX to PDF to page images is one chain, on demand, per page.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 007 · EDUCATION · Script Splitter
+app slug: apps/fs-edu-script-splitter
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Exam season: two hundred scripts go through a departmental scanner and
+come out as four enormous PDFs. Somebody now has to work out where each
+student's script starts and ends, split them, match them to candidate numbers,
+and distribute them to markers by question. This is done by hand, at night, by
+whoever is most junior, and a mis-split ruins a candidate's day.
+
+BUILD. A bulk script intake tool. Upload the scanner's output, render every page
+as a thumbnail, and let an administrator define script boundaries on a single
+scrolling page-strip — click the first page of each script, and the boundaries
+snap. Candidate numbers are read off the cover pages automatically and shown for
+confirmation. Split scripts are then allocated to markers by question, and each
+marker sees only their pages.
+
+ROLES.
+  - Exams administrator — uploads scans, sets boundaries, confirms candidates.
+  - Marker — marks allocated questions across many scripts.
+  - Chief examiner — monitors progress and samples marked work.
+
+SCREENS.
+  - Batch upload with per-file page counts.
+  - Page-strip splitter: every page as a thumbnail with boundary markers.
+  - Candidate confirmation queue with OCR suggestions.
+  - Marker queue, one question at a time across scripts.
+  - Progress dashboard by question and marker.
+
+CENTREPIECE. The page strip. Hundreds of page thumbnails in one horizontal
+scroller, each rendered straight from the source PDF at thumbnail size, with
+boundary handles that can be dragged. Splitting two hundred scripts becomes a
+five-minute task in one view rather than a filesystem exercise.
+
+FILESTACK.
+  - `pdfinfo` to get the page count of each scanner output.
+  - `output=format:png,page:N,density:72` + `resize=width:180` for the strip.
+  - `output=format:png,page:N,density:150` for marking-resolution pages.
+  - `ocr` on cover pages to read candidate numbers.
+  - `zip` to export a marked cohort for the exam board.
+
+DATA. exam; scan_batch; page (source handle, page index); script (page range,
+candidate number, confidence); allocation; mark; sample_check.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Scripts are page ranges over a source handle — no file is ever
+physically split or re-uploaded. Seed with a 40-page batch of six scripts.
+
+EDGE CASES.
+  - A candidate number is handwritten and OCR guesses wrong.
+  - A script has a blank page in the middle that must not end it.
+  - Pages are scanned upside down for one script.
+  - Two administrators split the same batch at once.
+
+DONE WHEN.
+  - A 200-page batch renders as a scrollable strip without stalling.
+  - Splitting is done entirely by page ranges, with no re-upload.
+  - Every candidate number is either OCR-confirmed or human-confirmed.
+  - A marker only ever sees the pages allocated to them.
+
+ARTICLE. "Splitting" a PDF without splitting anything: a script is a page range
+and a handle, and the pages are rendered on demand.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 008 · EDUCATION · Language Lab
+app slug: apps/fs-edu-language-lab
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Language learning needs speaking practice, and speaking practice needs
+a teacher to hear it. Learners record on their phones and send voice notes in
+whatever format the phone chose, in wildly different volumes, and the teacher's
+feedback — "your stress is on the wrong syllable at 0:14" — arrives as a text
+message with no way to hear the moment being described.
+
+BUILD. An asynchronous speaking lab. A teacher publishes a prompt with a model
+recording. Learners record a response in the browser or upload one. The teacher
+opens a submission and gets a waveform with timestamped comment pins: click at
+0:14, leave a note, optionally record a corrected pronunciation right there. The
+learner plays their own recording and hears the teacher's correction at exactly
+the point it applies.
+
+ROLES.
+  - Teacher — publishes prompts, leaves timestamped audio and text feedback.
+  - Learner — records responses, listens to feedback in context.
+  - Course coordinator — tracks speaking practice minutes per learner.
+
+SCREENS.
+  - Prompt list with model recordings.
+  - Recording screen with waveform, retake and submit.
+  - Teacher review with waveform and pin comments.
+  - Learner playback with feedback pins on the timeline.
+  - Practice minutes dashboard.
+
+CENTREPIECE. The pinned waveform. Both sides of the conversation share one
+timeline: the learner's recording with the teacher's notes and micro-recordings
+attached to the exact second they refer to. Feedback stops being a description
+of a moment and becomes the moment.
+
+FILESTACK.
+  - Picker with audio recording enabled, plus file upload for learners who
+    recorded elsewhere.
+  - `audio_convert` to normalise every submission to one web-playable format
+    and consistent loudness.
+  - Teacher correction clips uploaded with `client.upload` as separate handles.
+  - `virus_detection` on uploaded files from outside the browser recorder.
+  - Short-expiry signed policies on learner recordings.
+
+DATA. prompt; model_recording; submission (handle, duration); feedback_pin
+(timestamp, note, optional clip handle); practice_log.
+
+STACK. Next.js 16 App Router, Server Actions, Tailwind v4, libSQL/Turso.
+Waveform rendered from the audio element in the browser; no audio processing
+library in the repo. Zustand holds player state only.
+
+EDGE CASES.
+  - A learner uploads an M4A the browser will not play natively.
+  - A recording is 40 minutes when it should be 40 seconds.
+  - Two feedback pins land on the same second.
+  - A learner records with the microphone muted and submits silence.
+
+DONE WHEN.
+  - Any submitted audio format plays back in every modern browser.
+  - Feedback pins are accurate to the second on both sides.
+  - The teacher can record a correction without leaving the review screen.
+  - Silent or empty recordings are detected and flagged before submission.
+
+ARTICLE. Audio normalisation across whatever a phone decided to record, with no
+ffmpeg in the repository.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 009 · EDUCATION · Course Pack Builder
+app slug: apps/fs-edu-course-pack
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Every module has a reading pack: chapters, papers, handouts, past
+exams, assembled into one document with a cover sheet and a copyright notice.
+It is rebuilt every year by hand, in Word, from a folder of PDFs of varying
+quality, and the copyright declaration that legally must appear on each extract
+is added manually or forgotten entirely.
+
+BUILD. A course pack assembler. Librarians and lecturers add sources — PDFs,
+scans, images, DOCX handouts — select page ranges from each, order them by drag,
+and generate a pack. Every extract automatically carries a stamped copyright
+declaration. Packs are versioned per academic year, and students access them
+through expiring links rather than a permanent public file.
+
+ROLES.
+  - Lecturer — chooses readings and page ranges, orders the pack.
+  - Librarian — checks licensing, approves extracts, applies declarations.
+  - Student — reads the pack in the browser, downloads if permitted.
+
+SCREENS.
+  - Source library with page-level previews.
+  - Extract picker: choose page ranges visually from a page strip.
+  - Pack composer with drag-ordered sections and running page count.
+  - Licensing review queue for the librarian.
+  - Student reader with page navigation.
+
+CENTREPIECE. The extract picker. Pick a source, see its pages as thumbnails,
+drag a range, and it enters the pack as a section — with the copyright stamp
+already visible on the preview. What the librarian approves is exactly what the
+student receives.
+
+FILESTACK.
+  - `pdfinfo` per source for page counts, `output=format:png,page:N` for the
+    page strip.
+  - `output=format:pdf` to bring DOCX handouts into the pack format.
+  - `watermark` to stamp the copyright declaration onto every extracted page.
+  - `zip` for a downloadable pack where licensing allows it.
+  - Security Policies with academic-year expiry on student access URLs.
+
+DATA. module; source (handle, page_count, licence); extract (source_id, page
+range); pack; pack_version; access_grant.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Packs are compositions of page ranges plus a stamp chain — no
+assembled PDF is stored anywhere. Seed with a module and three sources.
+
+EDGE CASES.
+  - A source's licence forbids download but permits in-browser reading.
+  - A scanned chapter is skewed and low contrast.
+  - Two modules extract overlapping ranges from the same source.
+  - A pack is rebuilt for a new year and a source has been withdrawn.
+
+DONE WHEN.
+  - A pack is defined entirely as ordered page ranges over source handles.
+  - Every extracted page renders with its copyright declaration stamped.
+  - Download is blocked where licensing says so, and reading still works.
+  - Last year's pack version is still reproducible exactly.
+
+ARTICLE. Document assembly with nothing assembled: the pack is a data structure
+and the pages are rendered, stamped and delivered on request.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 010 · EDUCATION · Admissions Desk
+app slug: apps/fs-edu-admissions
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Admissions receives transcripts from ninety countries in forty
+formats: certified PDFs, photographs of certificates, scans with stamps and
+seals, documents in scripts the officer cannot read. Each one must be checked
+for completeness, verified, sometimes translated, and compared against entry
+requirements — by a small team, in a six-week window, at volume.
+
+BUILD. An admissions review desk. Applicants upload documents against a
+per-programme checklist; each upload is virus-scanned, normalised to a common
+viewing format, OCR'd for searchable text, and slotted against a requirement.
+Officers work a queue where every application shows what is present, what is
+missing and what is unreadable, and can request a specific replacement document
+in one click. Sensitive documents are behind expiring links throughout.
+
+ROLES.
+  - Applicant — uploads documents against a clear checklist, sees status.
+  - Admissions officer — verifies documents and clears the queue.
+  - Programme lead — reviews shortlisted applications against requirements.
+
+SCREENS.
+  - Applicant checklist with per-item status and re-upload prompts.
+  - Officer queue with completeness indicators.
+  - Document viewer with page navigation and extracted text panel.
+  - Requirement matching view.
+  - Re-request composer for missing or unreadable items.
+
+CENTREPIECE. The document viewer with a live text panel: the rendered page on
+the left, OCR text on the right, searchable, so an officer can find "grade
+point average" in a document they cannot otherwise read. Every extraction shows
+which page it came from.
+
+FILESTACK.
+  - Picker with local, url, googledrive and onedrive sources; applicants are
+    rarely at a desk.
+  - `virus_detection` on every inbound file — this is the open internet.
+  - `output=format:pdf` to normalise mixed formats into one viewer.
+  - `pdfinfo` + `output=format:png,page:N` for page-by-page review.
+  - `ocr` for the searchable text panel.
+  - Security Policies with short expiry on every applicant document.
+
+DATA. programme; requirement; application; document (handle, requirement_id,
+scan status, ocr text); verification; re_request.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Every document URL is signed server-side. Seed with three
+applications in different states of completeness.
+
+EDGE CASES.
+  - A transcript is photographed page by page and arrives as six images.
+  - OCR returns nothing useful because the document is a low-quality scan.
+  - An applicant uploads the same certificate against two requirements.
+  - A document is uploaded after the deadline and must be flagged, not lost.
+
+DONE WHEN.
+  - No applicant document is viewable without a signed, expiring URL.
+  - Every document is virus-scanned before an officer can open it.
+  - Mixed input formats all render in one consistent viewer.
+  - The checklist tells the applicant exactly what is still missing.
+
+ARTICLE. Format normalisation as the whole product: forty input formats, one
+viewer, no conversion service.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 011 · EDUCATION · Placement Logbook
+app slug: apps/fs-edu-placement-logbook
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Vocational courses — nursing, teaching, engineering, apprenticeships —
+require students to evidence hours and competencies in a real workplace. The
+evidence is a paper logbook signed by a supervisor, photographed at the end of
+term, and reconciled against a competency framework by an academic who has to
+trust a photograph of a signature they have never seen before.
+
+BUILD. A placement logbook where each shift is an entry: date, hours, setting,
+reflective note, competencies claimed, and evidence — photos of work, signed
+sheets, supervisor confirmations. Supervisors confirm entries through a link
+without creating an account. The academic reviews a competency matrix showing
+which requirements are evidenced, by which entries, with what confirmation, and
+where the gaps are with weeks left to fill them.
+
+ROLES.
+  - Student — logs shifts and attaches evidence from a phone, on the ward or
+    on site.
+  - Workplace supervisor — confirms entries via a link, no account required.
+  - Academic tutor — reviews the competency matrix and signs off the placement.
+
+SCREENS.
+  - Shift entry form with evidence capture and competency tagging.
+  - Logbook timeline with confirmation status per entry.
+  - Supervisor confirmation page reached by link.
+  - Competency matrix: requirements against evidence, with gaps highlighted.
+  - Placement sign-off and export.
+
+CENTREPIECE. The competency matrix. Rows are requirements, columns are weeks,
+cells fill in as confirmed evidence lands. A student can see in one glance that
+they have twelve confirmations for one competency and none for another, while
+there is still time to do something about it.
+
+FILESTACK.
+  - Picker with webcam and mobile capture — evidence is photographed at work.
+  - `exif` for capture time, cross-checked against the claimed shift date.
+  - `resize=width:1200,fit:max` for evidence review, `fit:crop` for timeline
+    thumbnails.
+  - `output=format:pdf` to fold photographed signed sheets into the export.
+  - `zip` to export the complete evidenced logbook for the awarding body.
+
+DATA. placement; shift_entry; evidence_item (handle, exif timestamp);
+competency; competency_claim; supervisor_confirmation; sign_off.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Supervisor links are signed, single-purpose and time-limited.
+Mobile-first: the primary user is standing up. Seed a half-complete placement.
+
+EDGE CASES.
+  - A shift is logged three weeks late and the photo EXIF proves it.
+  - A supervisor confirms from a hospital device with a locked-down browser.
+  - The same photo is attached to two different competencies.
+  - A placement is extended and the requirements change mid-way.
+
+DONE WHEN.
+  - A shift can be logged with evidence in under a minute on a phone.
+  - Supervisors confirm without registering, through an expiring signed link.
+  - The matrix shows gaps early enough to be actionable.
+  - The export is a complete, ordered, verifiable record.
+
+ARTICLE. Evidence with provenance, confirmed by people who will never make an
+account, and exported as one bundle — none of it needs a processing tier.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 012 · EDUCATION · Flashcard Snap
+app slug: apps/fs-edu-flashcard-snap
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Students revise from their own notes, which are handwritten, in a
+notebook, in a bag. Turning them into flashcards means retyping everything —
+which nobody does — or photographing pages into a folder that is not a study
+tool. The gap between "my notes" and "something I can test myself on" is an
+hour of typing per lecture.
+
+BUILD. A study-deck builder that starts from a photograph. Snap a page of
+notes; the app OCRs it and offers the text back as editable candidate cards,
+split on line breaks and headings, with the original page image kept alongside
+so the student can always see the source. Accept, edit or reject each card. Then
+study the deck with spaced repetition, with the original page one tap away when
+a card does not make sense out of context.
+
+ROLES.
+  - Student — photographs notes, curates cards, studies the deck.
+  - Study group member — subscribes to a shared deck.
+  - Tutor — publishes an official deck for a module.
+
+SCREENS.
+  - Capture flow: photograph a page, see the cleaned render.
+  - Card candidate review: OCR text on one side, source page on the other.
+  - Deck browser with card counts and due counts.
+  - Study session with reveal, grade and source peek.
+  - Shared deck directory.
+
+CENTREPIECE. The candidate review screen. The cleaned page render on the left,
+extracted lines on the right as draft cards, each with accept, edit and reject.
+Curating twenty cards from a page takes ninety seconds and never loses the link
+back to the handwriting it came from.
+
+FILESTACK.
+  - Picker with webcam and mobile capture for page photography.
+  - `ocr` to extract text from the page image.
+  - `enhance` and `modulate` to lift contrast on pencil and biro before OCR.
+  - `resize=width:1400,fit:max` for the source-peek view.
+  - `output=format:webp` + `quality:80` for deck thumbnails.
+
+DATA. deck; source_page (handle, ocr text); card (front, back, source_page_id,
+source region); review_state; subscription.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Spaced repetition scheduling is plain TypeScript in lib/. Zustand
+holds the study session only. Seed with two decks including one from a scan.
+
+EDGE CASES.
+  - Handwriting OCR returns partial nonsense and the student must fix it fast.
+  - A page photo is taken in landscape and the lines wrap oddly.
+  - The same page is photographed twice.
+  - A deck grows to 800 cards and the browser must stay responsive.
+
+DONE WHEN.
+  - A page of notes becomes a reviewable deck in under two minutes.
+  - Every card can show the exact source page it came from.
+  - Editing OCR output never destroys the original extraction.
+  - Study sessions work offline-ish: no blocking network call mid-session.
+
+ARTICLE. OCR as a drafting tool rather than a truth oracle — the human curates,
+and the source image is always one tap away.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 013 · EDUCATION · Practice Room
+app slug: apps/fs-edu-practice-room
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Instrumental teaching is weekly, and practice is daily. Between
+lessons a student practises alone, reinforcing mistakes for six days, and the
+teacher only discovers it on the seventh. Video feedback would fix this, except
+that a phone video of a cello lesson is 900MB, arrives sideways, and there is no
+way to say "your bow arm collapses at bar 34" other than typing bar 34.
+
+BUILD. A practice video exchange. Students record practice takes from the
+browser or upload from a phone. Teachers watch in a player with timestamped
+comment pins, drawing on freeze frames where a written note is not enough — bow
+angle, hand position, posture. The student sees the comment appear on the
+timeline at exactly the second it belongs to, with the teacher's drawing over
+the frozen frame.
+
+ROLES.
+  - Student — records practice takes, watches annotated feedback.
+  - Instrumental teacher — reviews takes, pins timestamped notes and drawings.
+  - Head of music — tracks practice consistency across a cohort.
+
+SCREENS.
+  - Assignment list with the piece, bars to focus on, and past takes.
+  - Recording and upload screen with take history.
+  - Teacher review player with pin timeline and freeze-frame drawing.
+  - Student playback with pins and drawing overlays.
+  - Practice consistency dashboard.
+
+CENTREPIECE. The freeze-frame annotation. Pause at 2:14, the frame becomes a
+canvas, the teacher draws the bow angle they want, and that drawing is stored as
+an overlay bound to that timestamp. Playback pauses and shows it in place. The
+video file itself is never touched.
+
+FILESTACK.
+  - Picker with video recording and mobile capture, background upload enabled
+    for large takes.
+  - `video_convert` for a web-playable rendition from whatever the phone shot.
+  - Poster frames pulled from the video for take thumbnails.
+  - Freeze-frame drawings uploaded via `client.upload` as transparent PNGs.
+  - Short-expiry signed policies — these are videos of children.
+
+DATA. piece; assignment; take (handle, duration, converted rendition);
+feedback_pin (timestamp, note); frame_annotation (timestamp, overlay handle).
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Zustand for player and canvas state. No video processing code in
+the repo. Seed with one assignment and two annotated takes.
+
+EDGE CASES.
+  - A 900MB take uploaded over home broadband while the tab is closed.
+  - A video is recorded in portrait and rotated by metadata only.
+  - Two annotations land on adjacent frames.
+  - A student uploads a take of the wrong piece.
+
+DONE WHEN.
+  - Any phone video format plays back in the review player.
+  - Annotations are frame-accurate on both sides.
+  - Large uploads survive the student navigating away.
+  - Every video URL is signed and expiring.
+
+ARTICLE. Frame-accurate video feedback with no transcoding pipeline and no
+video library — the rendition and the poster frame are both URLs.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 014 · EDUCATION · Whiteboard Capture
+app slug: apps/fs-edu-whiteboard
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. The lecture happens on a whiteboard and then it is wiped. Students
+photograph it from row nine at a keystone angle, with glare across the middle
+and a lecturer's shoulder in frame, and end up with a camera roll of unreadable
+rectangles they will never revisit. The most valuable artefact of the hour is
+also the worst-recorded one.
+
+BUILD. A shared board archive per module. Anyone in the room photographs the
+board; the app deskews, crops to the board, kills glare, boosts contrast and
+publishes it to the module timeline with a timestamp. Duplicates from different
+students are grouped so one board becomes one entry with the clearest capture
+promoted. Boards are OCR'd so a student can search "eigenvalue" and find the
+Tuesday board.
+
+ROLES.
+  - Student — captures boards, browses the module archive, searches it.
+  - Lecturer — moderates the archive, corrects captions, hides mistakes.
+  - Module rep — organises boards into topics.
+
+SCREENS.
+  - Capture flow with clean-up preview and topic tagging.
+  - Module timeline of boards by date and session.
+  - Board detail with zoom, extracted text and alternate captures.
+  - Search across all boards in a module.
+  - Lecturer moderation view.
+
+CENTREPIECE. The clean-up preview and duplicate grouping. Five students
+photograph the same board; the archive shows one entry with the best capture
+first and the others as alternates, all deskewed and legible, all searchable.
+
+FILESTACK.
+  - Picker with webcam and mobile capture.
+  - `enhance`, `modulate` and `monochrome` options to defeat glare and lift
+    marker contrast.
+  - `rotate` and crop from the user's straightening step.
+  - `ocr` for board text search.
+  - `resize=width:2000,fit:max` for zoom, `fit:crop` thumbnails for timeline.
+
+DATA. module; session; board_entry; capture (handle, transform chain, ocr
+text); topic_tag; moderation_action.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. The transform chain is stored as a string and applied at render.
+Mobile-first capture, desktop-first browsing. Seed with a two-week archive.
+
+EDGE CASES.
+  - Glare covers a third of the board and the capture must still be usable.
+  - Two boards are photographed in one frame.
+  - A lecturer wants a board removed immediately after a mistake.
+  - OCR on handwriting returns mostly noise and search must degrade gracefully.
+
+DONE WHEN.
+  - A board photographed from row nine is legible after clean-up.
+  - Duplicate captures of one board are grouped, not duplicated.
+  - Search finds boards by their content, not just their date.
+  - Removal by the lecturer is immediate and complete.
+
+ARTICLE. Deskew, de-glare and OCR on a photo of a whiteboard — three lines of
+URL, zero computer-vision dependencies.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 015 · EDUCATION · Accessible Course Materials
+app slug: apps/fs-edu-accessible-materials
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. A university's disability service has a legal duty to provide course
+materials in accessible formats, and receives a folder of scanned PDFs with no
+text layer, slide decks with unlabelled images, and handouts that are pictures
+of text. The work is done manually, per student, per week, and always arrives
+after the lecture it was needed for.
+
+BUILD. An accessibility remediation queue. Lecturers upload materials; the app
+assesses each one — is there a text layer, are images unlabelled, is contrast
+sufficient — and produces a remediation task list. OCR generates the missing
+text layer, staff write alt text for figures with the figure on screen beside
+the field, and students receive a version that a screen reader can actually
+read, before the lecture rather than after it.
+
+ROLES.
+  - Lecturer — uploads materials, sees an accessibility score before teaching.
+  - Accessibility officer — works the remediation queue.
+  - Student — accesses remediated materials and requests formats.
+
+SCREENS.
+  - Upload with immediate accessibility assessment.
+  - Remediation queue prioritised by teaching date.
+  - Alt-text workbench: figure on the left, description field on the right.
+  - Student materials library with format options.
+  - Compliance dashboard by module.
+
+CENTREPIECE. The alt-text workbench. Every image extracted from a document is
+listed with the page it appears on, rendered at a useful size, with a
+description field and a preview of how a screen reader will announce it.
+Remediating a 40-slide deck becomes a rhythm rather than an ordeal.
+
+FILESTACK.
+  - `pdfinfo` and `output=format:png,page:N` to render every page for review.
+  - `ocr` to generate the missing text layer for scanned material.
+  - `output=format:pdf` to normalise DOCX and PPTX uploads into one format.
+  - `resize` for the workbench figure previews.
+  - `zip` to deliver a remediated pack per module.
+
+DATA. material; assessment (has_text_layer, figure_count, issues); figure;
+alt_text; remediation_task; delivery.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. The app itself must pass the bar it enforces: full keyboard
+operation, visible focus, semantic headings, tested at 200% zoom.
+
+EDGE CASES.
+  - A scanned handout produces OCR text with 40% confidence.
+  - A lecture is tomorrow and the material was uploaded tonight.
+  - A figure is decorative and needs an explicit empty alt.
+  - A document is 200 pages with 300 figures.
+
+DONE WHEN.
+  - Every uploaded material gets an accessibility assessment within seconds.
+  - Scanned documents gain a searchable text layer with no OCR code in the repo.
+  - The queue is ordered by when the material is actually needed.
+  - The app passes keyboard-only and screen-reader review itself.
+
+ARTICLE. Accessibility remediation as a queue, where the hardest technical step
+— generating a text layer for a scan — is a single task name.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 016 · EDUCATION · Bootcamp Review Wall
+app slug: apps/fs-edu-bootcamp-review
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Coding bootcamps assess by project, and projects are evidenced by
+screenshots, screen recordings, deployed links and repository snapshots. Mentors
+review in a spreadsheet, clicking links that break, watching recordings that
+will not play, and leaving feedback in a comment column that the student reads
+once and loses.
+
+BUILD. A project review wall. Students submit a build: repository link, live
+URL, screenshots, and a short screen recording of the feature working. Mentors
+review against the module's assessment criteria, annotate screenshots directly,
+comment on recordings at a timestamp, and mark each criterion pass, revise or
+distinction. Students see a single review page with everything in context and a
+clear list of what to change.
+
+ROLES.
+  - Student — submits builds and evidence, actions review feedback.
+  - Mentor — reviews against criteria with inline annotation.
+  - Programme lead — monitors cohort progress and mentor consistency.
+
+SCREENS.
+  - Submission composer: links, screenshots, screen recording.
+  - Mentor review queue by cohort and module.
+  - Review canvas: screenshot annotation and recording pins side by side.
+  - Student review page with criterion outcomes and required changes.
+  - Cohort progress board.
+
+CENTREPIECE. The mixed-media review canvas. A screenshot with boxes drawn on
+the broken layout, next to a recording pinned at 0:42 where the validation
+fails, next to the criterion each belongs to. One review, three media types, one
+coherent verdict.
+
+FILESTACK.
+  - Picker for screenshots and screen recordings, with background upload.
+  - `video_convert` for a web-playable rendition and a poster frame.
+  - `resize=width:1600,fit:max` for screenshot annotation.
+  - Annotation overlays uploaded via `client.upload`.
+  - `urlscreenshot` to capture the submitted live URL at review time, so the
+    review has a record of what the site looked like when it was marked.
+
+DATA. cohort; module; criterion; submission; evidence_item; annotation;
+criterion_outcome; revision_request.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Zustand for annotation tool state. Seed with a cohort mid-module.
+
+EDGE CASES.
+  - A submitted live URL is down when the mentor opens it.
+  - A screen recording is 20 minutes and the relevant moment is at 18:30.
+  - A student resubmits while a review is in progress.
+  - Two mentors review the same submission differently.
+
+DONE WHEN.
+  - A review captures a screenshot of the live URL as it was at review time.
+  - Annotations work identically on screenshots and video frames.
+  - Every criterion has an explicit outcome and a reason.
+  - The student page tells them exactly what to change, in order.
+
+ARTICLE. `urlscreenshot` turns "it worked when I marked it" from an argument
+into a record.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 017 · EDUCATION · Field Trip Journal
+app slug: apps/fs-edu-field-journal
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Geography, geology, ecology and archaeology courses assess fieldwork,
+and fieldwork evidence is photographs taken in the rain at a grid reference,
+with observations written in a soaked notebook. Back at the department, matching
+the photo to the location to the note is guesswork, and the map that should
+anchor the whole report gets drawn from memory.
+
+BUILD. A field journal built around location. Students capture observations in
+the field: photo, note, sample tag, all stamped with the coordinates the camera
+recorded. The journal renders as a map with entries pinned where they were
+taken, and as a timeline for the write-up. Tutors review the map, comment on
+entries, and can see immediately when a set of photos claims a location the
+metadata does not support.
+
+ROLES.
+  - Student — captures observations on site, writes up from the journal.
+  - Field tutor — reviews journals, comments on entries, verifies coverage.
+  - Course lead — checks that every group covered the required sites.
+
+SCREENS.
+  - Field capture: camera, note, sample tag, auto location.
+  - Map view with pinned entries and coverage overlay.
+  - Timeline view for the write-up.
+  - Tutor review with per-entry comments.
+  - Group coverage summary.
+
+CENTREPIECE. The map. Every entry pinned at its captured coordinates, clustered
+by site, with photo thumbnails on hover. The write-up stops being reconstructed
+from memory because the evidence organised itself while it was being collected.
+
+FILESTACK.
+  - Picker with mobile capture; uploads queued and sent in the background when
+    signal returns.
+  - `exif` for coordinates, timestamp and device, read at upload time.
+  - `resize` presets for map thumbnails, timeline cards and full view.
+  - `output=format:webp` + `compress` for a journal that loads on 3G.
+  - `zip` to export the journal with its evidence for submission.
+
+DATA. trip; site; journal_entry (note, sample tag); photo (handle, lat, lng,
+captured_at); tutor_comment; coverage_requirement.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Map rendering with a lightweight library; coordinates come from
+`exif`, not from the browser geolocation API, so the photo is the source of
+truth. Seed with a two-site trip.
+
+EDGE CASES.
+  - Location services were off and the photo has no coordinates.
+  - A photo is taken at a site but uploaded from the hotel that evening.
+  - Two students photograph the same outcrop from opposite sides.
+  - The journal must be usable with no signal for six hours.
+
+DONE WHEN.
+  - Entries capture and queue offline, then sync without duplication.
+  - Every photo's location comes from its own metadata, shown honestly.
+  - Missing coordinates are stated, never guessed.
+  - The exported journal is complete and ordered.
+
+ARTICLE. The camera already knows where it was. Reading that is a URL task, and
+it reorganises the entire assessment.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 018 · EDUCATION · Similarity Evidence Board
+app slug: apps/fs-edu-similarity-board
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Academic misconduct cases are decided in a hearing, and the evidence is
+two documents that look similar. Presenting that evidence means printing both,
+highlighting passages with a marker, and photocopying the result — because no
+tool shows the panel the two pages side by side with the matched passages
+marked, in a form that goes into the case file unaltered.
+
+BUILD. A case evidence board for academic integrity panels. An investigator adds
+the submissions in question, marks matching regions across documents, and builds
+an exhibit set: paired pages with highlighted regions, an explanatory note per
+pair, in a fixed order. The student sees the same exhibits when responding. The
+panel reads a single ordered bundle, and the originals are never altered.
+
+ROLES.
+  - Investigator — assembles evidence, marks matching passages.
+  - Student — reviews the exhibits and files a written response.
+  - Panel member — reads the bundle in a fixed order and records a decision.
+
+SCREENS.
+  - Case file with all documents and their page counts.
+  - Pairing workbench: two documents side by side, region marking on both.
+  - Exhibit list with ordering and explanatory notes.
+  - Student response view with the same exhibits.
+  - Panel reading view and decision record.
+
+CENTREPIECE. The pairing workbench. Two page renders side by side, scroll-
+locked, with matched regions drawn on each and joined visually. What the
+investigator sees is exactly what the panel and the student will see.
+
+FILESTACK.
+  - `pdfinfo` and `output=format:png,page:N,density:150` to render both
+    documents page by page.
+  - `output=format:pdf` to normalise DOCX submissions before pairing.
+  - Highlight overlays uploaded via `client.upload` — the submissions are
+    evidence and must remain untouched.
+  - `zip` to produce the ordered exhibit bundle for the hearing.
+  - Signed policies with expiry on every case document.
+
+DATA. case; document; page; matched_region_pair; exhibit (order, note);
+student_response; panel_decision; audit_event.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Every action against a case writes an audit row that the UI
+displays. Nothing is ever deleted, only superseded.
+
+EDGE CASES.
+  - Two documents have different page sizes and the pairing must still align.
+  - A document is a scan with no text layer.
+  - The student disputes an exhibit and the pairing must be re-examined.
+  - The bundle must be reproducible identically months later.
+
+DONE WHEN.
+  - Originals are byte-identical from upload to hearing.
+  - Every exhibit is reproducible from stored regions, not stored images.
+  - The audit trail shows every action and is visible in the UI.
+  - The bundle exports in a fixed, stable order.
+
+ARTICLE. Evidence handling where mutation is disqualifying: overlays, page
+ranges and a deterministic bundle.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 019 · EDUCATION · Certificate Office
+app slug: apps/fs-edu-certificates
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Course completion produces a certificate, and certificates are a
+forgery problem wearing a design problem. Institutions generate PDFs from a
+template, email them, and then spend years answering "can you confirm this
+person completed this course" by hand, because the certificate itself carries no
+way to check.
+
+BUILD. A certificate office. Administrators design a certificate template with
+placeholder fields, issue certificates in bulk against a completion list, and
+each issued certificate gets a unique verification code and a public
+verification page. Recipients get a shareable link and a downloadable copy.
+Anyone can check a code and see issue date, course and status — including
+revoked — without seeing anything they should not.
+
+ROLES.
+  - Registrar — designs templates, issues in bulk, revokes when necessary.
+  - Graduate — receives, downloads and shares a verifiable certificate.
+  - Third-party verifier — checks a code with no account.
+
+SCREENS.
+  - Template designer with placeholder fields and live preview.
+  - Bulk issue flow from a completion list, with a preflight preview.
+  - Issued certificate register with search and revocation.
+  - Recipient page with download and share.
+  - Public verification page.
+
+CENTREPIECE. The bulk preflight. Before three hundred certificates are issued,
+the administrator sees the first, middle and last rendered in full, with real
+names in real positions — so the misaligned long name is caught before three
+hundred people receive it.
+
+FILESTACK.
+  - The institutional seal, signature images and template background stored as
+    handles and composited at render.
+  - `watermark` for the seal placement and for DRAFT overlays on previews.
+  - `output=format:pdf` for the downloadable certificate.
+  - `resize` presets for the recipient's shareable preview image.
+  - Signed policies so a revoked certificate's asset URLs stop resolving.
+
+DATA. template; placeholder_field; completion_record; certificate (code, issued
+_at, status); verification_event; revocation.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Verification codes generated with nanoid. The public verification
+route is deliberately minimal and fast. Seed with a template and 30 issued.
+
+EDGE CASES.
+  - A name is 60 characters and overflows the template.
+  - A certificate is revoked after being shared publicly.
+  - The same person completes the same course twice.
+  - A verifier checks a code that never existed.
+
+DONE WHEN.
+  - Bulk issue shows a real preflight before committing.
+  - Every certificate has a working public verification page.
+  - Revocation is immediate and visible to verifiers.
+  - Nothing on the verification page exposes personal data beyond the claim.
+
+ARTICLE. Composition and stamping at render time, so a certificate is a record
+in a database rather than a file in a folder.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 020 · EDUCATION · Parent Portal
+app slug: apps/fs-edu-parent-portal
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Schools communicate with parents by sending paper home in bags. Consent
+forms, medical updates, trip permissions and reports go out, and a fraction come
+back, late, signed in the wrong place, with the photo of the passport that was
+needed attached to a different letter. The office chases by phone for three
+weeks per trip.
+
+BUILD. A parent portal for forms and documents. The school publishes a form with
+required attachments — a consent signature, a passport photo page, a medical
+letter. Parents complete it on a phone in the school playground: capture the
+document, sign on screen, submit. The office sees a live completion board per
+class, chases only the parents who have not responded, and every submitted
+document is stored against the right child and the right form.
+
+ROLES.
+  - Parent — completes forms and captures documents on a phone.
+  - School office — publishes forms, monitors completion, chases gaps.
+  - Class teacher — sees which children in their class are cleared.
+
+SCREENS.
+  - Parent home: outstanding forms with deadlines, one tap to start.
+  - Form flow: fields, document capture, on-screen signature, review, submit.
+  - Office completion board by class and form.
+  - Submission viewer with the attached documents.
+  - Chase composer for outstanding parents.
+
+CENTREPIECE. The completion board. One grid, one class, one form, every cell
+either green or not — and every not-green cell has a one-tap chase. The office
+stops making phone calls to find out who has already replied.
+
+FILESTACK.
+  - Picker with mobile capture for document photos, with a crop step so a
+    passport page is cropped to the page.
+  - `resize` and `compress` so parent uploads over playground 4G are fast.
+  - Signature images uploaded via `client.upload` as transparent PNGs.
+  - `sfw` and `virus_detection` on parent-submitted files.
+  - Short-expiry signed policies on every child-linked document.
+
+DATA. school; class; child; form; form_field; submission; attachment (handle);
+signature; chase_event.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Mobile-first, low-bandwidth, works on an old Android. Seed with
+two forms in progress and a realistic completion spread.
+
+EDGE CASES.
+  - A parent has three children at the school and must not repeat everything.
+  - A document photo includes two passport pages in one frame.
+  - A form is republished after some parents have already responded.
+  - A parent has no smartphone and the office must submit on their behalf.
+
+DONE WHEN.
+  - A form with an attachment can be completed on a phone in under two minutes.
+  - Documents are always attached to the right child and the right form.
+  - The board makes chasing a one-tap action.
+  - Every child-linked document is behind an expiring signed URL.
+
+ARTICLE. The school bag as a data pipeline, and why upload UX is the entire
+product when your users are standing in a playground.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 021 · EDUCATION · Second Marker
+app slug: apps/fs-edu-second-marker
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Quality assurance in assessment requires double marking and
+moderation: a second marker grades a sample blind, the two sets of marks are
+compared, and discrepancies are resolved before results are released. In
+practice this means emailing a folder of scripts with the first marker's
+comments still visible, which defeats the entire purpose.
+
+BUILD. A moderation workflow. The first marker marks normally. The system
+selects a moderation sample by rule — boundaries, extremes, random percentage —
+and presents those submissions to a second marker with all first-marker
+annotations and scores hidden. Once both are in, a reconciliation view shows the
+two marks per criterion side by side, highlights divergence beyond a threshold,
+and records the agreed outcome with a reason.
+
+ROLES.
+  - First marker — marks the full cohort.
+  - Second marker — marks a blind sample.
+  - Moderator — reconciles divergences and signs off the cohort.
+
+SCREENS.
+  - Sampling rules and generated sample list.
+  - Blind marking canvas, visually identical to normal marking.
+  - Reconciliation view: two marks, per criterion, with divergence flags.
+  - Agreement record with reasons.
+  - Cohort sign-off summary and distribution chart.
+
+CENTREPIECE. The reconciliation view. Two columns of criterion scores, the same
+page render beneath both, and each marker's annotation overlay toggleable
+independently — so the moderator can literally see what one marker saw that the
+other did not.
+
+FILESTACK.
+  - `output=format:png,page:N,density:150` for the shared page render.
+  - Separate annotation overlay handles per marker, toggled by layer.
+  - `pdfinfo` for page counts.
+  - Signed policies so the blind marker cannot fetch the first marker's overlay.
+  - `zip` to export the moderation record for the external examiner.
+
+DATA. cohort; submission; marking_pass (marker_id, blind flag); criterion_score;
+divergence; agreement; sign_off.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Blindness is enforced server-side — the second marker's page never
+receives overlay handles it should not have. Seed a cohort mid-moderation.
+
+EDGE CASES.
+  - The second marker recognises the handwriting anyway.
+  - A divergence is larger than the threshold on one criterion only.
+  - The sample rule selects a submission that has not been first-marked yet.
+  - An external examiner needs read-only access to everything, later.
+
+DONE WHEN.
+  - Blind marking receives no first-marker data in any network response.
+  - Divergence is computed per criterion, not just on the total.
+  - Every agreed change records who agreed and why.
+  - The exported record satisfies an external examiner without further work.
+
+ARTICLE. Layered annotation overlays make double marking trivial: two markers,
+two transparent PNGs, one untouched original.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 022 · EDUCATION · Yearbook Studio
+app slug: apps/fs-edu-yearbook
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. The yearbook is made by a committee of students with a shared drive, a
+deadline, and four hundred photos of wildly different sizes submitted by two
+hundred people. Layouts break because a portrait is landscape, the printer
+rejects the file because the images are 72dpi, and somebody's photo is in twice
+under two names.
+
+BUILD. A collaborative yearbook builder. Students submit portraits and candid
+photos; the app enforces a consistent portrait crop at submission and flags
+resolution too low for print before it becomes a printer's problem. The
+committee arranges pages from templates, drops photos into slots that already
+know their aspect ratio, adds quotes and captions, and exports a print-ready
+ordered document.
+
+ROLES.
+  - Student contributor — submits portraits and candids, writes their quote.
+  - Yearbook committee — designs pages, curates photos, meets the deadline.
+  - Staff supervisor — approves content before print.
+
+SCREENS.
+  - Submission flow with live crop preview and resolution check.
+  - Photo library with tagging, duplicate detection and approval state.
+  - Page builder with template slots and drag-in photos.
+  - Proof view, page by page.
+  - Export and print-readiness report.
+
+CENTREPIECE. The submission crop with a print-resolution verdict. The student
+sees their portrait in the exact frame it will occupy in the book, plus a plain
+statement: this photo is good enough to print at this size, or it is not. The
+committee's rework disappears at the source.
+
+FILESTACK.
+  - Picker with `transformations: { crop, rotate, circle }` for portrait
+    framing at submission.
+  - `imagesize` to read dimensions and derive a print-resolution verdict.
+  - `resize=fit:crop` preset ladder for slots, proofs and thumbnails.
+  - `output=format:jpg` + `quality:95` for the print export path.
+  - `sfw` on candid submissions before they enter the library.
+
+DATA. yearbook; page; template_slot; contributor; photo (handle, dimensions,
+approval); caption; quote; export_job.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Zustand for page-builder state. Layout is stored as data; nothing
+is flattened until export. Seed with 30 photos and four built pages.
+
+EDGE CASES.
+  - A submitted portrait is 400px wide and will print as a blurry mess.
+  - The same student is submitted twice by two friends.
+  - A page template changes after photos are placed.
+  - A candid photo includes someone who has opted out of the yearbook.
+
+DONE WHEN.
+  - Every submitted portrait fits its slot without committee rework.
+  - Print resolution is verified at submission, not at the printer.
+  - Opt-outs remove a person from every page, everywhere, immediately.
+  - The export is ordered, complete and print-ready.
+
+ARTICLE. `imagesize` at submission time turns a print disaster into a sentence
+the contributor reads before they submit.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 023 · EDUCATION · Tutoring Recap
+app slug: apps/fs-edu-tutoring-recap
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Private tutoring lives or dies on what the parent believes happened in
+the hour they paid for. Tutors write a short email afterwards, or forget. The
+whiteboard work, the corrected exercise, the thing the student finally
+understood at minute forty — all of it disappears the moment the call ends.
+
+BUILD. A session recap tool for tutors. During or right after a session the
+tutor captures artefacts: photos of worked problems, screenshots of the shared
+whiteboard, a short recorded explanation, the homework set for next time. The
+app assembles them into a recap page the parent receives by link, with the
+session's focus, what went well, and what to practise. Sessions accumulate into
+a progress timeline the parent can scroll.
+
+ROLES.
+  - Tutor — captures artefacts and publishes recaps in under three minutes.
+  - Parent — reads recaps by link, sees progress over time.
+  - Student — opens the homework and the recorded explanation.
+
+SCREENS.
+  - Session composer: capture, order, annotate, set homework.
+  - Recap page as the parent sees it.
+  - Progress timeline across sessions.
+  - Homework list with completion state.
+  - Tutor dashboard of upcoming and unrecapped sessions.
+
+CENTREPIECE. The three-minute composer. Everything captured during the session
+is already queued; the tutor orders it, writes two sentences, and publishes. If
+recapping takes longer than three minutes it will not happen, so the interaction
+budget is the design constraint.
+
+FILESTACK.
+  - Picker with webcam, mobile capture and screen-capture-file upload.
+  - `enhance` and `rotate` on photographed worked problems.
+  - `audio_convert` for the tutor's short recorded explanation.
+  - `resize` presets for recap cards and full view.
+  - Signed expiring links for recap pages — these involve children.
+
+DATA. student; session; artefact (handle, type, order); recap; homework_item;
+progress_note; parent_link.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Mobile-first for the tutor, readable-on-anything for the parent.
+Seed with a student and six sessions of history.
+
+EDGE CASES.
+  - The tutor captures ten photos and only four belong in the recap.
+  - A parent opens the link on a five-year-old tablet.
+  - A session is recapped two days late.
+  - A recording is 12 minutes when 90 seconds was intended.
+
+DONE WHEN.
+  - A full recap can be published in three minutes from a phone.
+  - Parents need no account, only a signed expiring link.
+  - The progress timeline is genuinely readable across twenty sessions.
+  - Every artefact is retrievable in its original form.
+
+ARTICLE. Interaction budget as the primary spec: the upload path has to be
+faster than the tutor's motivation to skip it.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 024 · EDUCATION · Library Scan Desk
+app slug: apps/fs-edu-library-scan
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Academic libraries run scan-on-demand: a student requests a chapter, a
+staff member scans it, and it is delivered under copyright rules that limit
+extent, watermark the copy and expire access. The workflow is a spreadsheet, a
+network folder, an email with an attachment, and a copyright compliance risk
+nobody enjoys carrying.
+
+BUILD. A scan request desk. Students request a chapter with citation details;
+staff see a queue with the copyright extent already calculated from the holding
+record; they scan and upload; the system stamps the required declaration,
+applies an access window and notifies the requester. Access is per-person,
+expiring, and logged, which is exactly what the licence requires and exactly
+what a folder cannot do.
+
+ROLES.
+  - Student — requests a chapter, reads it in the browser within the window.
+  - Library staff — works the scan queue and uploads finished scans.
+  - Copyright officer — audits extent compliance and access logs.
+
+SCREENS.
+  - Request form with citation lookup and extent guidance.
+  - Staff queue with priority, extent limits and upload.
+  - Scan review with page navigation and quality check.
+  - Reader with access window countdown.
+  - Compliance log and extent report.
+
+CENTREPIECE. The extent guard. Before a scan is delivered, the system compares
+pages scanned against the permitted extent for that holding and blocks delivery
+if it exceeds it — with the page count taken from the file itself, not from what
+someone typed.
+
+FILESTACK.
+  - `pdfinfo` to read the actual page count of the uploaded scan.
+  - `output=format:png,page:N` for the in-browser reader — no download path.
+  - `watermark` to stamp the copyright declaration and the requester's name.
+  - `ocr` so the delivered scan is searchable and screen-reader accessible.
+  - Security Policies with per-user expiry on every delivered scan.
+
+DATA. holding; scan_request; scan (handle, page_count); extent_rule; delivery;
+access_event; compliance_report.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. The reader renders pages individually and never exposes a whole-
+file URL. Seed with a queue in three states.
+
+EDGE CASES.
+  - A staff member scans 40 pages when the extent permits 30.
+  - A student requests the same chapter twice in one term.
+  - A scan is upside down for half its pages.
+  - The access window expires while the student has the reader open.
+
+DONE WHEN.
+  - Extent is verified from the file, not from a form field.
+  - No delivered scan has a downloadable whole-file URL.
+  - Every page view is logged against a person and a request.
+  - Access genuinely stops when the window closes.
+
+ARTICLE. Copyright compliance as an access-control problem, solved with signed
+policies and per-page rendering.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 025 · EDUCATION · Ethics Submission
+app slug: apps/fs-edu-ethics
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Research ethics approval is a form with a dozen attachments —
+participant information sheets, consent templates, risk assessments, data
+management plans, letters from external sites — reviewed by a committee that
+meets monthly. Submissions bounce for missing documents, and the resubmission
+loop costs a month each time, which for a student with a fixed thesis deadline
+is catastrophic.
+
+BUILD. An ethics submission and review system. Applicants complete a form whose
+required attachments are driven by their answers, so the checklist is generated
+rather than guessed. The system verifies each attachment is present, readable
+and the right kind of document before submission is allowed. Reviewers annotate
+attachments directly, raise conditions, and applicants respond in place —
+turning a monthly bounce into a same-week resolution.
+
+ROLES.
+  - Researcher — completes the application and responds to conditions.
+  - Committee reviewer — reviews, annotates, raises and clears conditions.
+  - Committee chair — issues the decision and tracks the meeting agenda.
+
+SCREENS.
+  - Adaptive application form with generated attachment checklist.
+  - Pre-submission validation report.
+  - Reviewer workspace with document annotation and condition threads.
+  - Applicant response view with conditions and re-uploads.
+  - Chair's agenda and decision record.
+
+CENTREPIECE. The generated checklist. Answer "yes" to working with children and
+three new required documents appear with an explanation of why. The applicant
+stops guessing, and the committee stops bouncing submissions for things nobody
+told the applicant they needed.
+
+FILESTACK.
+  - Picker with Drive and OneDrive sources — researchers work in shared drives.
+  - `output=format:pdf` to normalise DOCX templates for review.
+  - `pdfinfo` and `output=format:png,page:N` for in-place annotation.
+  - `ocr` so reviewers can search a scanned site-approval letter.
+  - Annotation overlays uploaded separately; submitted documents stay pristine.
+
+DATA. application; question_response; required_document; attachment; review;
+condition (state, thread); decision; meeting_agenda.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Conditional requirements defined as data in lib/, not as branching
+JSX. Seed with three applications at different stages.
+
+EDGE CASES.
+  - An answer changes after documents are uploaded, adding new requirements.
+  - A required letter is a photograph of a printed page.
+  - A condition is cleared by one reviewer and reopened by another.
+  - A submission arrives one hour before the agenda closes.
+
+DONE WHEN.
+  - The checklist is fully derived from the applicant's answers.
+  - Submission is blocked until every required attachment is present and
+    readable.
+  - Conditions are threaded, stateful and resolvable in place.
+  - The chair's agenda builds itself from submission state.
+
+ARTICLE. Validation before submission rather than rejection after it — and the
+readability check is a task, not a support ticket.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 026 · EDUCATION · Open Day Prospectus
+app slug: apps/fs-edu-prospectus
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. A prospectus is printed once a year in one version for everyone, and is
+out of date the week it lands. Meanwhile the marketing team maintains the same
+photographs at six sizes across a website, a PDF, a social campaign and a
+pull-up banner, re-exporting each one by hand every time a course changes.
+
+BUILD. A prospectus builder that produces a personalised document per enquirer.
+The enquirer picks subjects, campus and entry year; the app assembles a
+prospectus from content blocks and a shared asset library, renders it as a
+readable web document and a downloadable PDF, and tracks which sections were
+actually read. Marketing maintains one asset library; every size and format
+downstream is derived.
+
+ROLES.
+  - Prospective student — builds and reads a personalised prospectus.
+  - Marketing team — maintains content blocks and the asset library.
+  - Recruitment officer — sees which sections enquirers actually read.
+
+SCREENS.
+  - Enquirer builder: pick subjects, campus, year.
+  - Personalised prospectus reader with section navigation.
+  - Asset library with usage map showing where each image appears.
+  - Content block editor with live preview at every output size.
+  - Engagement dashboard.
+
+CENTREPIECE. The asset usage map. Every image in the library shows every place
+it is used and at what size, all derived from one handle. Replacing a
+photograph updates the web reader, the PDF, the social card and the banner
+crop simultaneously, because none of them were ever separate files.
+
+FILESTACK.
+  - One handle per asset with a preset ladder: `resize` + `fit:crop` +
+    `output=format:webp` for web, `format:jpg` at high quality for print.
+  - Smart cropping so a single photograph works as a hero, a card and a square.
+  - `watermark` for embargoed campaign assets in preview.
+  - `output=format:pdf` for the downloadable prospectus.
+  - `tags` to auto-categorise the asset library for search.
+
+DATA. content_block; asset (handle, tags); prospectus_request; assembled_
+section; engagement_event; usage_reference.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Every rendition is a URL built at render time; nothing is exported
+to storage. Seed with a full asset library and three subject areas.
+
+EDGE CASES.
+  - A photograph is replaced and must update everywhere at once.
+  - An enquirer picks eight subjects and the document becomes enormous.
+  - A course closes after prospectuses have been generated.
+  - A print asset is requested at a size the original cannot support.
+
+DONE WHEN.
+  - No image is ever exported and stored at a second size.
+  - Replacing one asset updates every placement immediately.
+  - The personalised prospectus is readable on the web and downloadable.
+  - The usage map is accurate and clickable.
+
+ARTICLE. One handle, every placement — the asset library as a single source of
+truth with derived everything.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 027 · EDUCATION · Student ID Studio
+app slug: apps/fs-edu-id-studio
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Every September, thousands of new students must supply a passport-style
+photo for an ID card. They send selfies, group photos cropped badly, images with
+sunglasses, and files that are 40KB or 40MB. Someone in the card office fixes
+each one by hand, and the ones they miss print as unusable cards that have to be
+reissued.
+
+BUILD. An ID photo submission studio. The student uploads or takes a photo; the
+app detects the face, produces the compliant crop automatically, and shows a
+verdict against the rules — face size, position, background, resolution — before
+they can submit. Failures explain themselves in plain language with a retake
+button. The card office receives a queue of already-compliant photos and prints
+without touching them.
+
+ROLES.
+  - Student — submits a photo and gets an immediate, understandable verdict.
+  - Card office — reviews exceptions only, and prints batches.
+  - Registry — links approved photos to student records.
+
+SCREENS.
+  - Capture and upload with live compliance verdict.
+  - Retake guidance with specific, plain-language reasons.
+  - Card office exception queue.
+  - Batch print preview.
+  - Student record linkage view.
+
+CENTREPIECE. The instant verdict. Upload a photo and within a second see the
+proposed ID crop next to a checklist: face detected, face fills the frame,
+resolution sufficient. Rejection happens at the student's phone, not at the
+printer three weeks later.
+
+FILESTACK.
+  - `detect_faces` to locate the face and drive the compliance checks.
+  - `crop_faces` with fixed padding to produce the standard ID crop.
+  - `imagesize` for the resolution rule.
+  - `resize` + `output=format:jpg` + `quality:92` for the print rendition.
+  - `sfw` as a basic safety gate on uploads.
+
+DATA. student; photo_submission (handle, detection result, verdict); rule_set;
+exception; print_batch; record_link.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Detection results are read through the CDN task and stored with
+the submission. Mobile-first capture flow. Seed with a queue including two
+exceptions.
+
+EDGE CASES.
+  - Two faces in the frame.
+  - No face detected because of a hat and low light.
+  - A photo passes detection but is 500px and cannot print.
+  - A student submits five times in five minutes.
+
+DONE WHEN.
+  - The compliant crop is produced automatically from any usable photo.
+  - Every rejection explains itself in plain language with a retake path.
+  - The office queue contains only genuine exceptions.
+  - Print renditions meet the resolution rule without manual work.
+
+ARTICLE. Face detection and cropping as a form-validation step, delivered as two
+URL tasks and a checklist.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 028 · EDUCATION · Sports Day Gallery
+app slug: apps/fs-edu-sports-gallery
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. A school photographs sports day, produces two thousand images, and then
+faces a consent problem: some children must not appear in any photo shared
+outside the school, parents want the photos of their own child, and the whole
+thing has to be delivered by Monday. The default outcome is a locked folder
+nobody sees, or a public gallery that should never have existed.
+
+BUILD. A consent-aware event gallery. Photos are uploaded in bulk; children on
+the opt-out register are protected by a review step that blurs faces before
+anything is visible. Parents log in and see the whole gallery with a "find my
+child" flow that surfaces likely matches for confirmation. Downloads are
+watermarked unless purchased, and any photo can be pulled instantly with the
+removal propagating everywhere.
+
+ROLES.
+  - School photographer — bulk uploads and tags events.
+  - Safeguarding lead — clears the consent review queue.
+  - Parent — browses, finds their child, downloads or orders prints.
+
+SCREENS.
+  - Bulk upload with progress and per-photo status.
+  - Consent review queue with face-level actions.
+  - Parent gallery by event and race.
+  - Find-my-child flow with confirmation.
+  - Order and download basket.
+
+CENTREPIECE. The consent review queue. Every detected face in every photo is
+either cleared or blurred before a parent sees anything, and blurring is applied
+in the delivered image rather than as an overlay, so no unblurred bytes ever
+reach a browser.
+
+FILESTACK.
+  - `detect_faces` to enumerate faces per photo for the review queue.
+  - `blur_faces` / `pixelate_faces` applied to delivered renditions for
+    protected children.
+  - `resize` + `output=format:webp` so a 2,000-photo gallery scrolls.
+  - `watermark` on all previews and unpaid downloads.
+  - Signed expiring URLs on everything; nothing in this gallery is public.
+
+DATA. event; photo (handle, detected faces); consent_register; face_decision;
+parent_account; order; removal_request.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Delivered URLs are constructed server-side with the blur chain
+applied. Virtualised gallery grid. Seed with 200 photos and a consent register.
+
+EDGE CASES.
+  - A face is detected in the background of a photo of someone else.
+  - A parent claims a photo that is not their child.
+  - A removal request arrives after a photo has been downloaded.
+  - Two thousand photos must upload in one session.
+
+DONE WHEN.
+  - No unblurred rendition of a protected child is ever delivered.
+  - The gallery is fast at two thousand photos.
+  - Removal is immediate and complete across every view.
+  - Every preview is watermarked and every URL expires.
+
+ARTICLE. Safeguarding as a transformation: the blur is in the delivery chain,
+so the sensitive bytes never leave the CDN.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 029 · EDUCATION · Resource Exchange
+app slug: apps/fs-edu-resource-exchange
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Teachers make brilliant resources and share them in Facebook groups as
+attachments with no preview, no version, no licence and no way to know whether
+the worksheet is for year 4 or year 9 until you download it. Discovery is a
+scroll, quality is a gamble, and the same worksheet is recreated by ten thousand
+people every year.
+
+BUILD. A teacher resource exchange. Teachers publish resources — worksheets,
+slide decks, lesson plans, image packs — with curriculum tags, a licence, and an
+automatically generated preview of the first pages so browsing does not require
+downloading. Resources are versioned, rated, and remixable where the licence
+allows, with attribution carried automatically into the remix.
+
+ROLES.
+  - Publishing teacher — uploads, tags, licenses and versions resources.
+  - Browsing teacher — searches, previews and downloads or remixes.
+  - Moderator — handles licence disputes and quality reports.
+
+SCREENS.
+  - Publish flow with auto-preview and curriculum tagging.
+  - Search and browse with page previews in the results.
+  - Resource detail with page-by-page preview and version history.
+  - Remix flow with automatic attribution.
+  - Moderation queue.
+
+CENTREPIECE. Preview-before-download everywhere. Search results show real first
+pages, not a generic file icon, so a teacher can judge fit in two seconds. The
+preview is generated from the uploaded file at request time, for every format,
+with no preview service anywhere in the stack.
+
+FILESTACK.
+  - `output=format:pdf` to normalise DOCX and PPTX resources for preview.
+  - `pdfinfo` for page counts, `output=format:png,page:N` for page previews.
+  - `resize` + `output=format:webp` for result-card thumbnails.
+  - `watermark` to stamp attribution onto previews of licensed material.
+  - `virus_detection` on every publish — this is user-generated distribution.
+
+DATA. resource; version (handle, page_count); curriculum_tag; licence; remix
+(parent_id, attribution); rating; report.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Search over tags and extracted text. Seed with 40 resources across
+subjects and key stages.
+
+EDGE CASES.
+  - A resource is published in a format nothing previews natively.
+  - A remix's parent is later taken down for a licence violation.
+  - A 90-slide deck needs a preview without rendering 90 pages.
+  - Two teachers publish the same resource.
+
+DONE WHEN.
+  - Every resource, whatever its format, has a real page preview.
+  - Attribution follows a remix automatically and is visible.
+  - Every upload is scanned before it is downloadable by anyone.
+  - Version history is complete and every version stays retrievable.
+
+ARTICLE. Universal document preview as a two-task chain, and why it changes the
+economics of a resource marketplace.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 030 · EDUCATION · Attendance Evidence
+app slug: apps/fs-edu-attendance-evidence
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Attendance carries real consequences — funding, visa compliance,
+progression — and its evidence is a paper register photographed at the end of a
+session, or a signature sheet that goes missing. When an auditor asks for proof
+that a particular student attended a particular session eighteen months ago, the
+answer is a search through a filing cabinet.
+
+BUILD. A session evidence system. Each session generates a register; the tutor
+captures whatever evidence the institution's rules require — a photographed
+signature sheet, a room photo, a signed-in device list — and the evidence is
+bound to the session record with capture metadata. Compliance staff query by
+student, module or date and get the evidence back instantly, with an export that
+satisfies an auditor without a filing cabinet.
+
+ROLES.
+  - Tutor — takes the register and captures evidence in under a minute.
+  - Compliance officer — answers audit queries and exports evidence packs.
+  - Student — sees their own attendance record and disputes errors.
+
+SCREENS.
+  - Session register with fast marking and evidence capture.
+  - Evidence viewer with capture metadata.
+  - Compliance search by student, module, date range.
+  - Audit export builder.
+  - Student attendance record with dispute flow.
+
+CENTREPIECE. The compliance search. One query — this student, this date range —
+returns every session, its register state and the actual photographed evidence,
+in seconds. The audit conversation changes from "we will look into it" to
+"here it is".
+
+FILESTACK.
+  - Picker with mobile capture for signature sheets and room photos.
+  - `exif` for capture time, cross-checked against the scheduled session.
+  - `enhance` and `rotate` so a photographed signature sheet is legible.
+  - `ocr` on signature sheets to make handwritten names searchable.
+  - `zip` for audit export packs; signed expiring URLs everywhere else.
+
+DATA. session; register_entry; evidence_item (handle, captured_at); dispute;
+audit_query; export_pack.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Records are append-only; corrections are new rows with a reason.
+Mobile-first for capture, desktop-first for compliance. Seed a term of sessions.
+
+EDGE CASES.
+  - A register is amended three weeks later and the change must be traceable.
+  - Evidence is captured 40 minutes after the session ended.
+  - A student disputes an absence and the evidence is ambiguous.
+  - An export covers eighteen months and hundreds of sessions.
+
+DONE WHEN.
+  - Taking a register with evidence takes under a minute on a phone.
+  - Any audit question is answerable in one search with evidence attached.
+  - Amendments never overwrite history.
+  - Exports are complete, ordered and reproducible.
+
+ARTICLE. Audit-grade evidence with capture provenance, assembled from a phone
+photo and a metadata task.
+
+
+################################################################################
+################################################################################
+##  02 · HEALTHCARE, TELEMEDICINE & PATIENT INTAKE  —  30 PROMPTS [fs-healthcare]
+################################################################################
+################################################################################
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 031 · HEALTHCARE · Cardlift
+app slug: apps/fs-health-cardlift
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Every appointment starts with somebody retyping an insurance card. The
+patient photographs it in the car park at an angle, in shadow, with a thumb over
+the group number, and emails it to an address the front desk checks between
+patients. The details are then typed into a billing system, wrong, and the claim
+is rejected six weeks later for a transposed digit nobody can trace.
+
+BUILD. An insurance card capture flow that ends with structured, confirmed data.
+The patient photographs the front and back of the card inside the appointment
+confirmation flow. The app straightens and crops to the card, extracts member
+ID, group number, plan name and payer, and presents them as editable fields with
+the cropped card image beside each one. The patient confirms; the front desk
+receives verified data and never types a digit.
+
+ROLES.
+  - Patient — photographs their card on a phone, confirms the extracted fields.
+  - Front desk coordinator — reviews exceptions and clears the intake queue.
+  - Billing administrator — pulls verified coverage data into a claim.
+
+SCREENS.
+  - Appointment confirmation with card capture step.
+  - Capture flow: front, back, cleaned preview, retake.
+  - Field confirmation with the source crop beside each value.
+  - Front-desk intake queue with confidence indicators.
+  - Coverage record with full capture history.
+
+CENTREPIECE. The field confirmation screen. Each extracted value sits next to
+the exact region of the card it came from, cropped and enlarged. A patient
+confirms four fields in fifteen seconds because they can see what the machine
+saw, and a low-confidence field is obvious rather than silently wrong.
+
+FILESTACK.
+  - Picker with webcam and mobile capture, `transformations: { crop, rotate }`.
+  - `enhance` and `modulate` to recover a card photographed in a dark car.
+  - `ocr` to extract text from the cleaned card image.
+  - `resize=fit:crop` on specific regions to show the source of each field.
+  - Security Policies with short expiry — a card image is never a public URL.
+
+DATA. patient; appointment; card_capture (front/back handles, transform chain);
+extracted_field (value, confidence, source region); coverage_record;
+access_log_entry.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Every image URL is signed server-side and short-lived; no card
+handle is ever rendered into client HTML unsigned. Seed with three intakes.
+
+EDGE CASES.
+  - The card is photographed upside down and needs rotation before OCR.
+  - Glare from a laminated card obscures the group number.
+  - OCR reads a confident but wrong member ID.
+  - The patient closes the tab mid-upload.
+
+DONE WHEN.
+  - A card goes from photograph to confirmed structured data in under a minute.
+  - Every field shows the pixels it was read from.
+  - No card image is reachable without an expiring signed URL.
+  - Every view of a card is written to an access log the app displays.
+
+ARTICLE. OCR with visible provenance: the extraction is a URL task and the trust
+comes from showing the patient the crop it came from.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 032 · HEALTHCARE · Referral Inbox
+app slug: apps/fs-health-referral-inbox
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Referrals still arrive by fax and email, as multi-page TIFFs, faxed
+PDFs of printed emails, and scans so poor the letterhead is a smudge. A triage
+nurse opens each one in whatever desktop application will render it, works out
+which patient and which specialty it belongs to, and types the urgency into a
+system by hand. Urgent referrals sit in the queue because nobody knew.
+
+BUILD. A referral triage inbox. Inbound documents are normalised into one
+browser-viewable format, OCR'd, and auto-matched to a patient and specialty with
+the evidence for the match shown. Triage staff work a single queue: read the
+referral in the browser, confirm or correct the match, set urgency, and route.
+Urgency keywords are surfaced from the text so a "two-week wait" phrase never
+sits unnoticed for a week.
+
+ROLES.
+  - Triage nurse — reads, matches, prioritises and routes referrals.
+  - Specialty coordinator — receives routed referrals and books.
+  - Practice manager — monitors turnaround and breach risk.
+
+SCREENS.
+  - Unified inbox with format-agnostic previews.
+  - Referral reader: page navigation, extracted text panel, keyword highlights.
+  - Patient match confirmation with candidate records.
+  - Routing and urgency form.
+  - Turnaround dashboard with breach risk.
+
+CENTREPIECE. The reader with a keyword-highlighted text panel. The scan on one
+side, its extracted text on the other, with clinical urgency phrases highlighted
+in place. A nurse triages in thirty seconds what previously required reading a
+smudged fax end to end.
+
+FILESTACK.
+  - `output=format:pdf` to normalise TIFF, DOC and image referrals.
+  - `pdfinfo` for page counts, `output=format:png,page:N,density:150` to render.
+  - `ocr` for the text panel and keyword detection.
+  - `enhance` and `monochrome` to lift contrast on poor fax scans.
+  - Signed policies with short expiry on every referral document.
+
+DATA. referral (source handle, normalised handle); page; extracted_text;
+patient_match (candidate, confidence); urgency; routing; turnaround_event.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Keyword rules live in lib/ as data. Seed with a realistic inbox
+including two poor-quality faxes.
+
+EDGE CASES.
+  - A 6-page TIFF that no browser renders natively.
+  - Two patients in the system share a name and date of birth.
+  - OCR fails almost completely on a very poor fax.
+  - A referral arrives for a patient who does not exist yet.
+
+DONE WHEN.
+  - Every inbound format renders in one consistent browser reader.
+  - Urgency phrases are surfaced automatically and visibly.
+  - Patient matching always shows its evidence and is confirmable.
+  - Nothing is viewable without a short-expiry signed URL.
+
+ARTICLE. Deleting the document-conversion server: TIFF, DOC and fax PDF all
+become the same reader through one normalisation task.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 033 · HEALTHCARE · Wound Watch
+app slug: apps/fs-health-wound-watch
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Wound healing is judged by comparison over time, and the comparison is
+ruined by the photography. Different distances, different lighting, different
+angles, no scale reference — so "is this better than last week" becomes a
+clinical guess based on two incomparable phone photos taken by two different
+people.
+
+BUILD. A serial wound photography tool. The first capture establishes a
+reference: framing guide, distance prompt, and a disposable scale marker in
+frame. Every subsequent capture shows a ghost of the previous image as an
+alignment overlay so the photographer matches framing. The clinician reviews a
+timeline with a synchronised comparison slider, measurements taken against the
+scale marker, and notes anchored to points on the wound.
+
+ROLES.
+  - Community nurse — captures aligned serial photographs at each visit.
+  - Tissue viability clinician — reviews progression and adjusts treatment.
+  - Patient — captures between visits under guidance.
+
+SCREENS.
+  - Capture with alignment ghost and framing guide.
+  - Wound timeline with thumbnails by date.
+  - Comparison view with a wipe slider between two dates.
+  - Measurement and annotation canvas.
+  - Treatment note history.
+
+CENTREPIECE. The alignment ghost. The previous photo at 30% opacity over the
+live camera, so the nurse lines up before shooting. Every photo in the series
+then compares meaningfully, which is the entire clinical value of the record.
+
+FILESTACK.
+  - Picker with webcam and mobile capture at controlled resolution.
+  - `resize=width:1600,fit:max` for the comparison canvas and ghost overlay.
+  - `exif` for capture time and device consistency across the series.
+  - Annotation and measurement overlays uploaded with `client.upload` — the
+    clinical image itself is never modified.
+  - Short-expiry signed policies on every clinical image.
+
+DATA. patient; wound; capture (handle, captured_at, alignment reference);
+measurement; annotation_overlay; treatment_note.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Zustand for camera and comparison state. Mobile-first capture,
+tablet-first review. Seed a wound with six weeks of captures.
+
+EDGE CASES.
+  - A capture is taken without the scale marker in frame.
+  - Lighting changes drastically between two visits.
+  - A different nurse captures with a different phone.
+  - A patient captures at home and the framing is wildly off.
+
+DONE WHEN.
+  - Serial captures align well enough to compare honestly.
+  - Measurements are always traceable to a scale reference in the image.
+  - Clinical images are immutable and annotations are separate overlays.
+  - Every image access is logged and every URL expires.
+
+ARTICLE. Making phone photography clinically comparable, with the alignment
+overlay served from the previous capture's own handle.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 034 · HEALTHCARE · Consent Packet
+app slug: apps/fs-health-consent-packet
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Surgical and procedural consent is a multi-page document that must be
+read, understood and signed — and is usually handed over on a clipboard fifteen
+minutes before a procedure, or printed, signed, scanned and lost. Proving that a
+specific patient saw a specific version of a specific document is the entire
+legal point, and it is exactly what a scanned clipboard cannot do.
+
+BUILD. A consent packet system. Clinicians publish versioned consent documents
+per procedure. Patients receive a link, read the packet page by page in the
+browser, and cannot sign until every page has been on screen. They sign on the
+device, and the record captures the document version, the pages viewed, the time
+spent, and the signature — producing evidence of informed consent rather than
+just a signature.
+
+ROLES.
+  - Clinician — publishes and versions consent documents, reviews signatures.
+  - Patient — reads and signs on a phone or a waiting-room tablet.
+  - Governance lead — audits consent records against procedures performed.
+
+SCREENS.
+  - Consent document library with versions and procedure links.
+  - Patient reader with page progress and plain-language summaries.
+  - Signature capture.
+  - Consent record showing version, pages viewed and timings.
+  - Governance audit search.
+
+CENTREPIECE. The read-then-sign gate. The signature control is disabled until
+every page has been rendered on the patient's screen, and the record stores
+which pages, in which order, for how long. Consent becomes evidenced rather
+than asserted.
+
+FILESTACK.
+  - `pdfinfo` for the packet's page count, `output=format:png,page:N` to render
+    pages one at a time.
+  - `ocr` so consent text is searchable and screen-reader accessible.
+  - Signature images uploaded via `client.upload` as transparent PNGs.
+  - `output=format:pdf` and `zip` to export a complete consent record.
+  - Signed policies with expiry on the patient's reading link.
+
+DATA. procedure; consent_document; version (handle, page_count); consent_session
+(pages viewed, timings); signature; audit_record.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Page view events recorded server-side, not trusted from the
+client alone. Accessible by design: large type, keyboard operable, 200% zoom.
+
+EDGE CASES.
+  - The patient reads on a phone with a poor connection and pages stall.
+  - A document version changes between the link being sent and opened.
+  - A patient signs, then withdraws consent before the procedure.
+  - A signature is captured on a tablet with a stylus and a fat finger.
+
+DONE WHEN.
+  - Signing is impossible until every page has been displayed.
+  - The record proves version, pages, timings and signature together.
+  - Withdrawal is recorded as clearly as consent.
+  - The exported record is complete and reproducible years later.
+
+ARTICLE. Consent as an evidence trail rather than a signature box, built on
+page-at-a-time rendering.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 035 · HEALTHCARE · Teleconsult Room
+app slug: apps/fs-health-teleconsult
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Remote consultations fail on evidence. The patient says "it looks like
+this" and holds a rash up to a laptop webcam at 320p. The clinician asks them to
+email a photo, which arrives after the appointment, unlinked to the consultation
+and stored in an email inbox that is not a clinical record.
+
+BUILD. A consultation room with an in-call evidence sidebar. During the consult
+the clinician sends a capture request to the patient's phone; the patient
+photographs the area with guidance and it appears in the sidebar within seconds,
+attached to the consultation record. The clinician can zoom, annotate for the
+notes, and mark items as clinically significant. Everything is bound to the
+encounter, not to an inbox.
+
+ROLES.
+  - Clinician — runs the consult, requests and reviews evidence live.
+  - Patient — receives a capture prompt on their phone mid-call.
+  - Records team — retrieves the encounter with all evidence attached.
+
+SCREENS.
+  - Consultation room with video area and evidence sidebar.
+  - Patient capture prompt (phone) with guidance and preview.
+  - Evidence detail with zoom and annotation.
+  - Encounter summary with significant items highlighted.
+  - Records search by encounter.
+
+CENTREPIECE. The live capture request. The clinician clicks "request photo of
+the affected area", the patient's phone buzzes with a guided capture flow, and
+fifteen seconds later a usable image is in the sidebar. The clinical question is
+answered inside the appointment rather than after it.
+
+FILESTACK.
+  - Picker with mobile capture opened directly from the prompt link.
+  - `enhance` and `modulate` for poorly lit home photographs.
+  - `resize=width:1800,fit:max` for clinical zoom, thumbnails for the sidebar.
+  - `virus_detection` and `sfw` on patient uploads.
+  - Short-expiry signed policies; the capture link itself expires in minutes.
+
+DATA. encounter; capture_request; evidence_item (handle, significance);
+annotation_overlay; clinical_note; access_log_entry.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Sidebar updates by polling a Server Action — no bespoke socket
+layer for a demo. Seed with a completed encounter containing evidence.
+
+EDGE CASES.
+  - The patient's phone upload completes after the call has ended.
+  - The patient uploads a photo of the wrong body area.
+  - A capture link is forwarded to someone else.
+  - The connection drops mid-upload and resumes.
+
+DONE WHEN.
+  - A photo requested mid-call appears in the sidebar within seconds.
+  - Every evidence item is bound to the encounter, never to an inbox.
+  - Capture links expire in minutes and cannot be reused.
+  - Late uploads still attach to the correct encounter.
+
+ARTICLE. The clinical evidence gap in telemedicine, closed by a browser upload
+that never touches your server.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 036 · HEALTHCARE · Teaching Case Builder
+app slug: apps/fs-health-teaching-cases
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Clinical teaching runs on real cases, and real cases are full of
+identifiable patients. Building a teaching case means de-identifying every image
+and document by hand in an image editor — blurring faces, cropping out name
+bands, removing metadata — and one missed detail is a serious incident rather
+than an embarrassment.
+
+BUILD. A teaching case builder with de-identification as a required, auditable
+step. Clinicians import case material; the app detects faces and identifiable
+regions, proposes redactions, and refuses to publish until every flagged region
+is resolved. Published cases render only from de-identified derivatives, and the
+audit record shows exactly what was redacted, by whom, and when.
+
+ROLES.
+  - Clinician author — builds the case and resolves every flagged region.
+  - Governance reviewer — approves publication.
+  - Learner — works through published cases with questions and reveals.
+
+SCREENS.
+  - Case builder with material import and flag list.
+  - De-identification workbench with proposed and manual redactions.
+  - Publication gate showing unresolved flags.
+  - Learner case view with staged reveals.
+  - Redaction audit record.
+
+CENTREPIECE. The publication gate. A blunt, unignorable screen listing every
+detected face and identifiable region, each either redacted or explicitly
+cleared with a reason. Publishing is impossible while anything is unresolved.
+
+FILESTACK.
+  - `detect_faces` to enumerate faces across imported material.
+  - `blur_faces` / `pixelate_faces` / `partial_pixelate` applied to the
+    delivered rendition, so identifiable bytes are never served.
+  - `output=format:png,page:N` to render document pages for redaction.
+  - `exif` to expose capture metadata that must be stripped from teaching use.
+  - Signed policies on source material; published derivatives are the only
+    thing learners can reach.
+
+DATA. case; source_material; detected_region; redaction (type, applied chain);
+publication; learner_progress; audit_event.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Learner-facing URLs are built server-side with the redaction chain
+baked in. Seed with one unpublished and one published case.
+
+EDGE CASES.
+  - A name band is visible in the corner of a clinical photograph.
+  - Face detection misses a partially turned face.
+  - A document page contains an address in body text.
+  - A published case is later found to contain an identifier.
+
+DONE WHEN.
+  - No learner-facing URL can be edited into an unredacted rendition.
+  - Publication is blocked while any flag is unresolved.
+  - The audit record shows every redaction decision and its author.
+  - Withdrawal of a published case is immediate and total.
+
+ARTICLE. De-identification enforced by the delivery chain — if the redaction is
+in the URL, the original bytes cannot leak.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 037 · HEALTHCARE · Prescription Verify
+app slug: apps/fs-health-prescription-verify
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Community pharmacies receive prescriptions as paper, as photographs
+sent by patients, and as scans forwarded by surgeries. Each one must be read,
+checked against the patient record, verified for legitimacy, and dispensed —
+under time pressure, at a counter, with handwriting that is a genre of its own.
+
+BUILD. A prescription intake and verification tool for a pharmacy counter. The
+prescription is photographed or uploaded; the app cleans and orients it,
+extracts prescriber, patient, drug, dose and quantity as candidate fields, and
+presents them for confirmation against the patient's record with obvious
+mismatches highlighted. Verification actions are logged, and the image is
+retained as the dispensing evidence.
+
+ROLES.
+  - Pharmacy technician — captures and confirms prescription details.
+  - Pharmacist — verifies, checks interactions, authorises dispensing.
+  - Compliance auditor — reviews dispensing evidence retrospectively.
+
+SCREENS.
+  - Counter capture with clean-up preview.
+  - Field confirmation against the patient record.
+  - Mismatch review with source crop for each field.
+  - Dispensing log with evidence images.
+  - Audit search by patient, drug or date.
+
+CENTREPIECE. The mismatch review. Extracted values sit beside record values,
+differences highlighted, each with the cropped region of the prescription it
+came from. The pharmacist checks the disagreement rather than re-reading the
+whole page.
+
+FILESTACK.
+  - Picker with webcam capture at the counter.
+  - `enhance`, `modulate` and `rotate` for legibility on poor photographs.
+  - `ocr` for candidate field extraction.
+  - `resize=fit:crop` on regions to show the source of each extracted value.
+  - Signed short-expiry policies on prescription images; `virus_detection` on
+    anything forwarded from outside.
+
+DATA. prescription (handle, transform chain); extracted_field (value,
+confidence, region); patient_record_match; verification; dispensing_log.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Fast keyboard-driven confirmation — this is used standing up,
+under pressure. Seed with five prescriptions including two with mismatches.
+
+EDGE CASES.
+  - Handwriting defeats OCR entirely and manual entry must be fast.
+  - A photograph shows two prescriptions on one page.
+  - A drug name is extracted with a plausible but wrong spelling.
+  - The same prescription is presented twice.
+
+DONE WHEN.
+  - Every extracted field is confirmable against its source crop.
+  - Mismatches with the patient record are impossible to miss.
+  - Manual override is always available and always logged.
+  - Dispensing evidence is retained, immutable and auditable.
+
+ARTICLE. OCR as an assistant that must show its working, in a workflow where
+being confidently wrong is dangerous.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 038 · HEALTHCARE · Dental Chart
+app slug: apps/fs-health-dental-chart
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Dental records are visual: radiographs, intraoral photographs and a
+chart of thirty-two teeth, each with a history. Practice software shows these as
+separate lists, so the connection between "tooth 26" and "the radiograph from
+2019 that shows why" requires the dentist to remember which file was which.
+
+BUILD. A tooth-centred record. The chart is the navigation: click a tooth and
+see every image, note and treatment ever recorded against it, in date order.
+New images are tagged to teeth at upload with a click on the chart. Radiographs
+and photographs sit side by side on a timeline, with a comparison view for any
+two dates and annotations bound to the specific tooth.
+
+ROLES.
+  - Dentist — charts, uploads, compares and annotates by tooth.
+  - Hygienist — records observations against specific teeth.
+  - Patient — sees their own images with plain-language explanations.
+
+SCREENS.
+  - Interactive dental chart as the primary navigation.
+  - Tooth detail with image timeline and treatment history.
+  - Upload flow with chart-click tagging.
+  - Two-date comparison view.
+  - Patient-facing explanation view.
+
+CENTREPIECE. The chart-as-navigation. Every image in the record is reachable by
+clicking the tooth it concerns, and every upload is tagged the same way. The
+chart stops being a diagram and becomes the index of the entire record.
+
+FILESTACK.
+  - Picker with local upload and webcam for intraoral cameras.
+  - `resize=width:1800,fit:max` for diagnostic viewing, thumbnails for
+    timelines.
+  - `modulate` and `monochrome` options for radiograph contrast adjustment at
+    view time, never destructively.
+  - Annotation overlays uploaded via `client.upload`, bound to tooth and date.
+  - Signed expiring policies on every clinical image.
+
+DATA. patient; tooth; image (handle, tooth_ids, captured_at, modality);
+annotation_overlay; treatment_record; patient_explanation.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. The chart is an SVG with per-tooth hit areas. Zustand for viewer
+state. Seed with a patient with eight years of history.
+
+EDGE CASES.
+  - A radiograph covers six teeth and must be tagged to all of them.
+  - Contrast adjustment must never alter the stored diagnostic image.
+  - Two images from the same date must order sensibly.
+  - A patient view must not expose clinical shorthand without explanation.
+
+DONE WHEN.
+  - Every image is reachable in two clicks from the chart.
+  - Contrast and brightness adjustments are view-time only.
+  - Comparison works across any two dates for any tooth.
+  - The patient view is genuinely comprehensible to a patient.
+
+ARTICLE. Non-destructive image adjustment as a URL parameter, in a record where
+altering the diagnostic image is unthinkable.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 039 · HEALTHCARE · Veterinary Visit
+app slug: apps/fs-health-vet-visit
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Veterinary practices handle a patient who cannot describe symptoms and
+an owner who can. Owners film the limp, photograph the lump, and bring it on a
+phone that the vet then has to squint at across a consulting table. The video of
+the seizure that happened at 3am — the single most diagnostically useful artefact
+— never makes it into the record.
+
+BUILD. A pre-visit and in-visit media record for a veterinary practice. Owners
+upload video and photos before the appointment through a link, tagged to the
+animal and the concern. The vet reviews on a big screen before the consult,
+scrubs to the relevant moment, captures frames into the record, and adds notes.
+Everything stays attached to the animal's history for the next vet who sees it.
+
+ROLES.
+  - Owner — uploads video and photos from a phone before the visit.
+  - Veterinary surgeon — reviews, captures key frames, records findings.
+  - Practice nurse — manages the pre-visit queue and chases missing media.
+
+SCREENS.
+  - Owner upload link with concern description.
+  - Pre-visit review queue by appointment time.
+  - Media player with frame capture into the record.
+  - Animal history timeline across visits.
+  - Findings and treatment note.
+
+CENTREPIECE. Frame capture from owner video. The vet scrubs to the moment the
+limp is visible, captures that frame into the clinical record as a still, and
+annotates it. The 3am seizure video becomes a documented clinical observation.
+
+FILESTACK.
+  - Picker with mobile capture and background upload for large owner videos.
+  - `video_convert` for a web-playable rendition from any phone format.
+  - Poster and frame extraction for stills captured into the record.
+  - `resize` presets for the history timeline.
+  - `virus_detection` on owner uploads; signed expiring URLs on the upload link.
+
+DATA. animal; owner; appointment; media_item (handle, rendition, source);
+captured_frame; finding; history_entry.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Zustand for the player. No video processing code in the repo.
+Seed with two appointments including one with pre-visit video.
+
+EDGE CASES.
+  - A 1.2GB video uploaded over home Wi-Fi before a morning appointment.
+  - A video is portrait and rotated by metadata only.
+  - An owner uploads twelve near-identical photos.
+  - The upload finishes after the appointment has started.
+
+DONE WHEN.
+  - Any phone video format plays in the review player without a plugin.
+  - Frames captured into the record are permanent and annotatable.
+  - Large uploads survive the owner closing the tab.
+  - Media stays attached to the animal across visits and vets.
+
+ARTICLE. Owner-generated video as clinical evidence, with transcoding and frame
+extraction handled entirely by the delivery layer.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 040 · HEALTHCARE · Physio Progress
+app slug: apps/fs-health-physio-progress
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM. Physiotherapy works if the home exercises are done correctly, and the
+therapist has no idea whether they are. Patients are given a paper sheet of
+stick figures, do the exercise wrong for three weeks, and return no better. The
+feedback loop between the clinic and the living room does not exist.
+
+BUILD. A home exercise programme with video check-ins. Therapists build a
+programme from a library of demonstration videos, with reps, sets and cues.
+Patients record themselves performing the exercise; the therapist reviews with
+side-by-side playback — demonstration on the left, patient on the right, both
+scrubbing together — and leaves timestamped cues. Progress is tracked by
+adherence and by range-of-motion comparison across weeks.
+
+ROLES.
+  - Physiotherapist — builds programmes and reviews patient check-in videos.
+  - Patient — follows the programme, records check-ins on a phone.
+  - Clinic lead — monitors adherence and outcomes across caseloads.
+
+SCREENS.
+  - Programme builder from the exercise library.
+  - Patient programme view with demonstration video and record button.
+  - Side-by-side review player with synchronised scrubbing.
+  - Timestamped cue feedback for the patient.
+  - Adherence and progress dashboard.
+
+CENTREPIECE. Synchronised side-by-side playback. Demonstration and patient
+video scrub together, so a therapist can show the difference at the exact point
+in the movement where it goes wrong — and the patient sees the same pairing when
+they watch the feedback.
+
+FILESTACK.
+  - Picker with video recording and mobile capture, background upload enabled.
+  - `video_convert` to normalise phone recordings into a web rendition.
+  - Poster frames for check-in thumbnails.
+  - Freeze-frame annotation overlays uploaded via `client.upload`.
+  - Short-expiry signed policies — these are videos of patients' bodies.
+
+DATA. programme; exercise; demonstration_video; check_in (handle, rendition,
+recorded_at); cue (timestamp, note); adherence_record; progress_measure.
+
+STACK. Next.js 16 App Router, Server Actions, TypeScript, Tailwind v4,
+libSQL/Turso. Zustand for the dual-player sync state. Mobile-first for the
+patient. Seed with a four-week programme and check-ins.
+
+EDGE CASES.
+  - A patient records in portrait while the demonstration is landscape.
+  - A check-in video is recorded at 60fps and 700MB.
+  - The exercise is performed off-camera for half the clip.
+  - A patient records six check-ins in one day and none the following week.
+
+DONE WHEN.
+  - Demonstration and check-in scrub in sync regardless of source format.
+  - Cues are frame-accurate and visible to the patient in context.
+  - Uploads complete reliably from a phone on home broadband.
+  - Every patient video is behind a short-expiry signed URL.
+
+ARTICLE. Two videos, one timeline, no transcoding pipeline — the rendition is a
+URL and the comparison is the product.
