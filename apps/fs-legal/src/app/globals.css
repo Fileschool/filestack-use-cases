@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+:root {
+  /* Professional services partnership: near-black, claret, ivory */
+  --brand-950: #0c0b0a;
+  --brand-900: #12100e;
+  --brand-800: #1d1a17;
+  --brand-700: #2c2823;
+  --brand-600: #4a443c;
+  --brand-500: #6d6558;
+  --brand-400: #938a7b;
+  --brand-300: #b8b0a3;
+  --brand-200: #d8d2c7;
+  --brand-100: #e9e5dc;
+  --brand-50: #f2efe9;
+
+  --paper: #f6f4ef;
+  --accent: #7b2d3b;
+  --accent-dark: #5f212c;
+  --accent-light: #a04f5d;
+  --gold: #b08d57;
+
+  --font-display: "Cormorant Garamond", Garamond, Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  background: var(--paper);
+  color: var(--brand-900);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display { font-family: var(--font-display); font-weight: 500; letter-spacing: 0.005em; }
+.font-mono { font-family: var(--font-mono); }
+
+/* Hairline gold rule used between sections */
+.rule-gold { height: 1px; background: var(--gold); opacity: .55; }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--brand-200);
+  border-radius: 0;
+  transition: border-color .3s ease, box-shadow .3s ease;
+}
+.card:hover { border-color: var(--brand-300); box-shadow: 0 10px 34px rgba(12,11,10,.07); }
+
+.input {
+  width: 100%; padding: .75rem 1rem; background: #fff;
+  border: 1px solid var(--brand-300); border-radius: 0;
+  font-size: .9rem; font-family: var(--font-sans);
+}
+.input:focus { outline: none; border-color: var(--brand-900); box-shadow: 0 0 0 3px rgba(12,16,14,.06); }
+
+.btn-primary, .btn-secondary, .btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .8rem 1.6rem; font-size: .75rem; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; border-radius: 0;
+  transition: all .3s ease; border: 1px solid transparent;
+}
+.btn-primary { background: var(--brand-900); color: var(--paper); border-color: var(--brand-900); }
+.btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+.btn-secondary { background: transparent; color: var(--brand-900); border-color: var(--brand-400); }
+.btn-secondary:hover { border-color: var(--brand-900); }
+.btn-ghost { color: var(--brand-600); }
+.btn-ghost:hover { color: var(--brand-900); }
+
+.label { display: block; font-size: .68rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--brand-500); }
+
+.pill {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .22rem .6rem; border-radius: 0;
+  font-size: .68rem; font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
+}
+
+.eyebrow { font-family: var(--font-display); font-size: .95rem; font-style: italic; color: var(--accent); letter-spacing: .02em; }

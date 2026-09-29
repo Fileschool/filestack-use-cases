@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  /* Postal / business services: navy, oxblood, kraft paper */
+  --brand-950: #0c1526;
+  --brand-900: #16233b;
+  --brand-800: #1f3050;
+  --brand-700: #2c4066;
+  --brand-600: #48587a;
+  --brand-500: #6c7a96;
+  --brand-400: #94a0b6;
+  --brand-300: #b9c2d2;
+  --brand-200: #d8dee7;
+  --brand-100: #eaeef3;
+  --brand-50: #f4f6f9;
+
+  --paper: #f4f1ec;
+  --accent: #a6242c;
+  --accent-dark: #83191f;
+  --accent-light: #c95158;
+
+  --font-display: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Libre Franklin", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--paper);
+  color: var(--brand-900);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+.font-mono { font-family: var(--font-mono); }
+
+/* A franked-envelope rule, used under section headings */
+.rule-franked {
+  height: 4px;
+  background: repeating-linear-gradient(
+    -45deg, var(--accent) 0 8px, transparent 8px 16px
+  );
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--brand-200);
+  border-radius: 2px;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.card:hover { border-color: var(--brand-300); box-shadow: 0 6px 24px rgba(12,21,38,.07); }
+
+.input {
+  width: 100%;
+  padding: .7rem .9rem;
+  background: #fff;
+  border: 1px solid var(--brand-300);
+  border-radius: 2px;
+  font-size: .9rem;
+  font-family: var(--font-sans);
+}
+.input:focus { outline: none; border-color: var(--brand-900); box-shadow: 0 0 0 3px rgba(22,35,59,.08); }
+
+.btn-primary, .btn-secondary, .btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .7rem 1.4rem; font-size: .8rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; border-radius: 2px;
+  transition: all .2s ease; border: 1px solid transparent;
+}
+.btn-primary { background: var(--brand-900); color: #fff; border-color: var(--brand-900); }
+.btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+.btn-secondary { background: #fff; color: var(--brand-900); border-color: var(--brand-300); }
+.btn-secondary:hover { border-color: var(--brand-900); }
+.btn-ghost { color: var(--brand-600); }
+.btn-ghost:hover { color: var(--brand-900); }
+
+.label {
+  display: block; font-size: .68rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--brand-500);
+}
+
+.pill {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .2rem .6rem; border-radius: 2px;
+  font-size: .68rem; font-weight: 700; letter-spacing: .04em;
+  font-family: var(--font-mono);
+}
+
+.eyebrow {
+  font-family: var(--font-mono); font-size: .7rem; font-weight: 500;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
+}

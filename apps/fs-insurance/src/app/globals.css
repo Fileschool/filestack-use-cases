@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  /* Established mutual insurer: navy, ochre, institutional white */
+  --brand-950: #071a30;
+  --brand-900: #0f2a4a;
+  --brand-800: #163a63;
+  --brand-700: #1f4d80;
+  --brand-600: #3468a0;
+  --brand-500: #5988bb;
+  --brand-400: #8bacd1;
+  --brand-300: #b5cbe2;
+  --brand-200: #d5e2ee;
+  --brand-100: #e8f0f6;
+  --brand-50: #f4f8fb;
+
+  --paper: #ffffff;
+  --paper-sunk: #f2f5f8;
+  --accent: #b07d2b;
+  --accent-dark: #8d6220;
+  --accent-light: #d5a44f;
+
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--paper);
+  color: var(--brand-950);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+.font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--brand-200);
+  border-radius: .25rem;
+  transition: box-shadow .2s ease;
+}
+.card:hover { box-shadow: 0 6px 22px rgba(7,26,48,.08); }
+
+/* Institutional top rule used on panels */
+.card-ruled { border-top: 3px solid var(--brand-900); }
+
+.input {
+  width: 100%; padding: .7rem .9rem; background: #fff;
+  border: 1px solid var(--brand-300); border-radius: .25rem;
+  font-size: .95rem; font-family: var(--font-sans);
+}
+.input:focus { outline: none; border-color: var(--brand-700); box-shadow: 0 0 0 3px rgba(31,77,128,.12); }
+
+.btn-primary, .btn-secondary, .btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .75rem 1.5rem; font-size: .9rem; font-weight: 700;
+  border-radius: .25rem; transition: all .2s ease; border: 1px solid transparent;
+}
+.btn-primary { background: var(--brand-900); color: #fff; }
+.btn-primary:hover { background: var(--brand-800); }
+.btn-secondary { background: #fff; color: var(--brand-900); border-color: var(--brand-300); }
+.btn-secondary:hover { border-color: var(--brand-900); }
+.btn-ghost { color: var(--brand-600); }
+.btn-ghost:hover { color: var(--brand-900); }
+
+.label { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--brand-600); }
+
+.pill {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .25rem .65rem; border-radius: .25rem;
+  font-size: .72rem; font-weight: 700;
+}
+
+.eyebrow { font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-dark); }

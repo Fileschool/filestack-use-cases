@@ -1,135 +1,87 @@
-# Filestack Use Cases & Demos (Fileschool)
+# Filestack Use Cases
 
-Welcome to the **Fileschool Use Cases** monorepo. This repository contains production-grade, highly interactive demo applications demonstrating the power of [Filestack](https://www.filestack.com/) integrations inside modern web applications.
+Sample applications we build in-house to show developers what they can build with
+Filestack. Each one is a complete, working product rather than a snippet, built as
+a business a customer would recognise, with a written guide and a video script
+alongside it.
 
-It is structured as a [Turborepo](https://turbo.build/) monorepo with multiple apps and shared configurations.
+Every app carries a black strip above its own masthead marking it as a Filestack
+use case, and a footer explaining in plain English what Filestack is doing.
 
----
+## Start here
 
-## 🚀 Applications Inside
-
-### 1. 📂 Fireshare (`apps/fs-filesharing`)
-
-An instant file-sharing application (limited to 500 KB per file) built with Next.js, Tailwind CSS, Turso (SQLite/Drizzle), and Filestack.
-
-- **Features**: Instantly upload any file using Filestack's Picker, view upload history, generate shareable links, and perform on-the-fly transformations on images.
-- **Key Tech**: Next.js, Drizzle ORM, Turso DB, Filestack SDK, Tailwind CSS.
-
-### 2. 🏠 Horizon Pro Real Estate (`apps/fs-realestate`)
-
-A complete real estate listing and management platform showcasing premium visuals and complex interactive UI components.
-
-- **Features**: Property listings search and filters, admin dashboard for listing creation and management, interactive walkthrough tours, image gallery management, and an interactive **Filestack Transformation Playground** for cropping, resizing, and filtering property photos.
-- **Key Tech**: Next.js, Zustand (global state management), Tailwind CSS v4, Lucide Icons, Filestack JS SDK.
----
-
-## 🛠️ Monorepo Structure
-
-```text
-fileschool/
-├── apps/
-│   ├── fs-filesharing/      # Next.js filesharing application
-│   └── fs-realestate/       # Next.js real estate application (Horizon Pro)
-├── packages/
-│   ├── eslint-config/       # Shared ESLint configuration
-│   ├── typescript-config/   # Shared TypeScript configuration
-│   └── ui/                  # Shared UI component library
-├── package.json             # Root package.json (monorepo workspaces setup)
-└── turbo.json               # Turborepo task pipeline configuration
-```
-
----
-
-## 🏁 Getting Started
-
-### 📋 Prerequisites
-
-- **Node.js**: `v18` or higher
-- **npm**: `v10` or higher (package manager used in this monorepo)
-
-### 💻 Installation & Setup
-
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/Fileschool/filestack-use-cases.git
-   cd filestack-use-cases
-   ```
-
-2. **Install dependencies** from the root:
-
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment Variables**:
-   Both apps require environment configuration. Create `.env` or `.env.local` files in the respective directories:
-
-   - **For `apps/fs-filesharing`**:
-     Create `apps/fs-filesharing/.env` and configure:
-
-     ```env
-     NEXT_PUBLIC_FILESTACK_API_KEY=your_filestack_api_key
-     TURSO_DATABASE_URL=your_turso_db_url
-     TURSO_AUTH_TOKEN=your_turso_auth_token
-     ```
-
-   - **For `apps/fs-realestate`**:
-     Create `apps/fs-realestate/.env` and configure:
-     ```env
-     NEXT_PUBLIC_FILESTACK_API_KEY=your_filestack_api_key
-     ```
-
----
-
-## 🦄 Development & Build Commands
-
-This repository uses Turborepo to orchestrate tasks across all packages and apps.
-
-### Running all apps locally (development mode)
-
-Start the development servers for all apps concurrently:
+[`apps/fs-directory`](apps/fs-directory) is a catalogue of everything below. It shows a
+screenshot of each application, what it does, and exactly which Filestack capabilities it
+uses, with a page per use case and an index of every capability across the set.
 
 ```bash
-npm run dev
+npx turbo dev --filter=fs-directory    # localhost:3009
 ```
 
-### Building all apps for production
+The screenshots are real: each app was run locally, captured, and the image stored in
+Filestack like everything else in the repository.
+
+## The apps
+
+| Folder | The business | Vertical | What Filestack does |
+| --- | --- | --- | --- |
+| [`apps/fs-education`](apps/fs-education) | Fairmount College | Education | Renders any submission as a page a lecturer can draw on, and stores the markup separately |
+| [`apps/fs-realestate`](apps/fs-realestate) | Horizon Pro | Real estate | One uploaded photo serves every image size the marketplace needs |
+| [`apps/fs-filesharing`](apps/fs-filesharing) | Fireshare | File sharing | Upload, short link, and image transformations by URL |
+| [`apps/fs-construction`](apps/fs-construction) | APEX | Construction | Serves one drawing through two viewers: an interactive preview and a flattened blueprint |
+| [`apps/fs-mailroom`](apps/fs-mailroom) | Redfern | Logistics | Reads the sender and recipient off an envelope, then indexes the contents |
+| [`apps/fs-expenses`](apps/fs-expenses) | Marlow | Fintech | Flattens and reads a receipt, and marks each figure where it was found |
+| [`apps/fs-marketplace`](apps/fs-marketplace) | Saltmarket | E-commerce | Corrects and enlarges a poor seller photo, then serves every size |
+| [`apps/fs-recruitment`](apps/fs-recruitment) | Hollis | HR tech | Screens attachments before they open, previews without downloading |
+| [`apps/fs-insurance`](apps/fs-insurance) | Ardmore Mutual | Insurance | Runs a whole claim-intake chain from one upload |
+| [`apps/fs-legal`](apps/fs-legal) | Pemberton Hale | Legal | Signed expiring links and watermarked previews |
+
+## Running them
 
 ```bash
-npm run build
+npm install
+npx turbo dev --filter=fs-insurance     # or any folder above
 ```
 
-### Running commands for a specific app
+Each app runs on its own port so several can run at once.
 
-You can target a specific app using Turborepo's `--filter` option:
+| App | Port | | App | Port |
+| --- | --- | --- | --- | --- |
+| fs-mailroom | 3010 | | fs-recruitment | 3013 |
+| fs-expenses | 3011 | | fs-insurance | 3014 |
+| fs-marketplace | 3012 | | fs-legal | 3015 |
+| fs-directory | 3009 | | | |
 
-- **Start Only Real Estate (Horizon Pro)**:
-  ```bash
-  npx turbo dev --filter=fs-realestate
-  ```
-- **Start Only Filesharing (Fireshare)**:
-  ```bash
-  npx turbo dev --filter=fs-filesharing
-  ```
+The original four use the default port, so run them one at a time or pass `-p`.
 
----
+## Environment
 
-## 📐 Code Quality and Conventions
+Copy `.env.example` to `.env` in each app.
 
-Ensure your workspace remains clean by using these utility commands:
+| Variable | Needed for |
+| --- | --- |
+| `NEXT_PUBLIC_FILESTACK_API_KEY` | Every app. Uploads and CDN delivery. Public by necessity, because uploads go from the browser straight to Filestack. |
+| `FILESTACK_APP_SECRET` | The apps that read documents. Text extraction, envelope reading and document detection all reject unsigned requests, so those apps sign a short-lived policy server side. Never prefix this with `NEXT_PUBLIC_`. |
+| `FILESTACK_WORKFLOW_ID` | Virus scanning, which runs as a Workflow rather than a URL and reports back by webhook. |
+| `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` | Only fs-education and fs-filesharing, which use a database. |
 
-- **Format**: Format all code using Prettier:
-  ```bash
-  npm run format
-  ```
-- **Lint**: Run ESLint across all apps and packages:
-  ```bash
-  npm run lint
-  ```
-- **Type Check**: Validate TypeScript types across the codebase:
-  ```bash
-  npm run check-types
-  ```
+## Two things worth knowing before you build another one
 
-For information on contributing, code structure guidelines, and naming conventions, please refer to [CONTRIBUTING.md](./CONTRIBUTING.md).
+**Not everything is a URL.** Most of Filestack works by building a URL and
+reading the result. Virus scanning does not: it runs after the file lands in
+storage and reports back to a webhook you configure in the dashboard. Picking the
+wrong shape is the most common integration mistake.
+
+**Some tasks must be signed.** Text extraction, envelope reading and document
+detection reject unsigned requests. The apps that use them each have a route at
+`src/app/api/filestack/sign/route.ts` that holds the secret, keeps an allowlist of
+tasks it is willing to sign, and returns a finished URL to the browser.
+
+## Each app ships with
+
+- `README.md` — what it is and how to run it
+- `ARTICLE.md` — the long-form technical write-up
+- `VIDEO-SCRIPT.md` — a shot-by-shot script for the demo video
+
+Planned use cases and their status are tracked in
+[`NEXT-USE-CASES.csv`](NEXT-USE-CASES.csv).
