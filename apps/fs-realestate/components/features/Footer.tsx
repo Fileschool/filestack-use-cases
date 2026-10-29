@@ -152,7 +152,7 @@ export const Footer: FC = () => {
       <div className="bg-slate-900 py-4 px-4">
         <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
           <p className="text-[11px] font-medium text-white/70 leading-relaxed">
-            © Copyright 2026 horizonpro.com — Demonstration application. No real
+            © {new Date().getFullYear()} horizonpro.com — Demonstration application. No real
             transactions take place on this site.
           </p>
           <a

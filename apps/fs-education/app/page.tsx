@@ -239,7 +239,7 @@ export default async function LandingPage() {
             <FilestackWordmark className="text-sm" />
           </p>
           <p className="text-xs text-brand-300">
-            Fairmount College · a coursework demo
+            © {new Date().getFullYear()} Fairmount College · a coursework demo
           </p>
         </footer>
       </main>

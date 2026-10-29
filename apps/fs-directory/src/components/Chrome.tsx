@@ -36,8 +36,8 @@ export function Chrome({ children }: { children: React.ReactNode }) {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <FilestackLogo className="h-4" />
             <p className="text-xs" style={{ color: 'var(--ink-500)' }}>
-              Every screenshot on this site was captured from the running application and is
-              served from Filestack.
+              © {new Date().getFullYear()} Filestack. Every screenshot on this site was captured
+              from the running application and is served from Filestack.
             </p>
           </div>
         </div>
