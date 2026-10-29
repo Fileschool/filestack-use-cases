@@ -1,7 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Fraunces, Karla } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/providers/QueryProvider';
+import { rootMetadata, viewport as buildViewport } from '@repo/seo';
+import { SITE } from '@/lib/seo';
 
 const fraunces = Fraunces({
   variable: '--font-fraunces',
@@ -15,11 +17,8 @@ const karla = Karla({
   weight: ['400', '500', '600', '700'],
 });
 
-export const metadata: Metadata = {
-  title: 'Saltmarket | Secondhand, sold well',
-  description:
-    'Saltmarket is a marketplace for furniture, homeware and vintage finds. List in a minute, from the photo you already took.',
-};
+export const metadata: Metadata = rootMetadata(SITE);
+export const viewport: Viewport = buildViewport(SITE);
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",
+    "@repo/seo": "*",
     "drizzle-orm": "^0.45.2",
     "nanoid": "^5.1.9",
     "next": "^16.2.6",

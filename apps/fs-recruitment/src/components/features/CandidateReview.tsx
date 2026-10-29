@@ -11,6 +11,7 @@ import { previewUrl, signedTaskSegment } from '@/lib/filestack';
 import { formatBytes } from '@/lib/utils';
 import { requestSignedUrl } from '@/services/filestack.service';
 import type { IOcrResult, IStoredFile } from '@/interfaces/filestack.interface';
+import { withBasePath } from '@repo/seo';
 
 type ScanState = "pending" | "clean" | "infected" | "unconfigured";
 
@@ -34,7 +35,7 @@ export function CandidateReview() {
     const poll = async (): Promise<void> => {
       attempts += 1;
       const response = await fetch(
-        `/api/filestack/virus-webhook?handle=${encodeURIComponent(uploaded.handle)}`,
+        withBasePath(`/api/filestack/virus-webhook?handle=${encodeURIComponent(uploaded.handle)}`),
       );
       const body = (await response.json()) as {
         status: string;

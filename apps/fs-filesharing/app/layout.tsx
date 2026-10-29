@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { rootMetadata, viewport as buildViewport } from '@repo/seo';
+import { SITE } from '@/lib/seo';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,11 +14,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Fireshare — Drop a file, get a link",
-  description:
-    "Drop a file up to 500 KB and get a shareable link. Powered by Filestack.",
-};
+export const metadata: Metadata = rootMetadata(SITE);
+export const viewport: Viewport = buildViewport(SITE);
 
 export default function RootLayout({
   children,

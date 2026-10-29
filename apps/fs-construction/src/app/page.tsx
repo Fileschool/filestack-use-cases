@@ -4,6 +4,8 @@ import { FC, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ArrowDown, Menu, X } from 'lucide-react';
 import { FilestackLogo } from '@/components/ui/FilestackLogo';
+import { DemoAbout, JsonLd } from '@repo/seo/components';
+import { SITE } from '@/lib/seo';
 
 /* ─────────────────────────────────────────────
    Landing Page — Luxury Construction Company
@@ -55,11 +57,9 @@ const NAV_LINKS = [
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [heroLoaded, setHeroLoaded] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setHeroLoaded(true);
     const handleScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -208,7 +208,9 @@ export default function LandingPage() {
         {/* Hero Content */}
         <div className="relative z-10 flex flex-col justify-end h-full pb-24 lg:pb-32">
           <div className="mx-auto max-w-[1400px] w-full px-6 lg:px-12">
-            {heroLoaded && (
+            {/* Rendered on the server, so crawlers read the headline. The fade-up
+                classes still animate it in on first paint. */}
+            {(
               <div className="max-w-3xl space-y-6">
                 <h1
                   className="text-5xl sm:text-6xl lg:text-8xl font-bold text-white leading-[0.95] tracking-[-0.02em] animate-fade-up"
@@ -429,6 +431,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <JsonLd site={SITE} />
+      <DemoAbout site={SITE} />
 
       {/* ═══════════════════════════════════
           FOOTER

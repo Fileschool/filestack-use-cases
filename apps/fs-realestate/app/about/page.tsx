@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/components/features/PageHero";
+import { noindex } from "@repo/seo";
 
+// Fictional brand content and forms: useful in the demo, not in search results.
 export const metadata: Metadata = {
   title: "About — Horizon Pro",
   description: "Learn more about Horizon Pro and our mission.",
+  ...noindex,
 };
 
 export default function AboutPage() {

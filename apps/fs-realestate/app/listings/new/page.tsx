@@ -3,11 +3,14 @@ import { ListingForm } from "@/forms/ListingForm";
 import { ArrowLeft, Home } from "lucide-react";
 import Link from "next/link";
 import { RequireAuth } from "@/components/features/RequireAuth";
+import { noindex } from "@repo/seo";
 
+// Fictional brand content and forms: useful in the demo, not in search results.
 export const metadata: Metadata = {
   title: "Post a Property — Horizon Pro",
   description:
     "Create a new property listing with high-quality images and detailed specifications.",
+  ...noindex,
 };
 
 export default function NewListingPage() {

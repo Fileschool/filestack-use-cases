@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { CopyButton } from "@/components/CopyButton";
 import { Transformations } from "@/components/Transformations";
 import { formatBytes, fileIconKind } from "@/lib/utils";
+import { noindex } from "@repo/seo";
 
 type Params = { code: string };
 
@@ -40,8 +41,10 @@ export async function generateMetadata({
 }) {
   const { code } = await params;
   const share = await getShare(code);
-  if (!share) return { title: "Share not found" };
+  if (!share) return { title: "Share not found", ...noindex };
   return {
+    // Visitors’ files, deleted after a week: never in search results.
+    ...noindex,
     title: `${share.filename} · Fireshare Use Case`,
     description: `Filestack Use Case: Shared file ${share.filename} (${formatBytes(share.size)}). This is a demonstration of Filestack's file sharing capabilities.`,
     keywords: [

@@ -16,14 +16,14 @@ No part of that involves a rendering server.
 
 ## Stack
 
-| Layer | Tech |
-| --- | --- |
-| Framework | Next.js 16 (App Router) |
-| Upload, storage, CDN, rendering | Filestack |
-| Client state | Zustand, TanStack Query |
-| Forms and validation | React Hook Form, Zod |
-| Styling | Tailwind v4 |
-| Language | TypeScript |
+| Layer                           | Tech                    |
+| ------------------------------- | ----------------------- |
+| Framework                       | Next.js 16 (App Router) |
+| Upload, storage, CDN, rendering | Filestack               |
+| Client state                    | Zustand, TanStack Query |
+| Forms and validation            | React Hook Form, Zod    |
+| Styling                         | Tailwind v4             |
+| Language                        | TypeScript              |
 
 Quotes live in `localStorage` behind a service class, so the demo runs with no database. Logins are emulated: you pick a side, client or architect, and explore both. The file layer is the real thing.
 
@@ -162,11 +162,11 @@ https://cdn.filestackcontent.com/output=format:png,page:1,density:150/rotate=deg
 
 The three filters map to three real tasks, all of which work on any raster the CDN can produce:
 
-| UI label | Task | What it does |
-| --- | --- | --- |
-| Blueprint Blue | `monochrome` | Flattens to one channel, which is what makes the blueprint tint read cleanly |
+| UI label           | Task           | What it does                                                                       |
+| ------------------ | -------------- | ---------------------------------------------------------------------------------- |
+| Blueprint Blue     | `monochrome` | Flattens to one channel, which is what makes the blueprint tint read cleanly       |
 | High-Contrast Gray | `blackwhite` | Thresholds to pure black and white, so faint pencil lines either survive or do not |
-| Full Color | none | The raster as rendered |
+| Full Color         | none           | The raster as rendered                                                             |
 
 `density:150` in the `output` task is the setting that matters most for drawings. It is the DPI the page is rasterised at. Too low and dimension text turns to mush; too high and you are shipping megabytes to draw a floor plan.
 
@@ -243,15 +243,15 @@ So: the proven path is PDFs, which is also how drawings actually arrive most of 
 
 The same handle-plus-two-viewers pattern carries into most of the surrounding product:
 
-| Surface | Filestack feature |
-| --- | --- |
-| Virus scanning drawings from contractor networks | `virus_detection` |
-| Pulling drawing numbers and revisions off a title block | `ocr`, which returns per-word bounding boxes |
-| Straightening a site drawing photographed on a phone | `doc_detection` |
-| Rescuing an underexposed site photo | `enhance` |
-| Scanning an old drawing that only exists at low resolution | `upscale` |
-| Watermarking a drawing before it goes to a subcontractor | `watermark` |
-| Running the whole chain automatically on upload | [Workflows](https://www.filestack.com/docs/workflows/) |
+| Surface                                                    | Filestack feature                                     |
+| ---------------------------------------------------------- | ----------------------------------------------------- |
+| Virus scanning drawings from contractor networks           | `virus_detection`                                   |
+| Pulling drawing numbers and revisions off a title block    | `ocr`, which returns per-word bounding boxes        |
+| Straightening a site drawing photographed on a phone       | `doc_detection`                                     |
+| Rescuing an underexposed site photo                        | `enhance`                                           |
+| Scanning an old drawing that only exists at low resolution | `upscale`                                           |
+| Watermarking a drawing before it goes to a subcontractor   | `watermark`                                         |
+| Running the whole chain automatically on upload            | [Workflows](https://www.filestack.com/docs/workflows/) |
 
 The OCR one is the most interesting for this vertical. Title blocks are structured, always in the same corner, and full of exactly the metadata an estimator retypes by hand.
 
@@ -267,14 +267,14 @@ The OCR one is the most interesting for this vertical. Title blocks are structur
 
 ## Further reading
 
-| Topic | Link |
-| --- | --- |
-| File Picker configuration and sources | [Pickers](https://www.filestack.com/docs/uploads/pickers/web/) |
-| Every transformation task | [Processing API](https://www.filestack.com/docs/api/processing/) |
-| Document preview and delivery | [Deliver files](https://www.filestack.com/products/deliver-files/) |
-| OCR, virus scanning, enhancement | [Intelligence](https://www.filestack.com/docs/intelligence/) |
-| Chaining processing on upload | [Workflows](https://www.filestack.com/docs/workflows/) |
-| Security policies and signed URLs | [Security](https://www.filestack.com/docs/security/) |
+| Topic                                 | Link                                                              |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| File Picker configuration and sources | [Pickers](https://www.filestack.com/docs/uploads/pickers/web/)     |
+| Every transformation task             | [Processing API](https://www.filestack.com/docs/api/processing/)   |
+| Document preview and delivery         | [Deliver files](https://www.filestack.com/products/deliver-files/) |
+| OCR, virus scanning, enhancement      | [Intelligence](https://www.filestack.com/docs/intelligence/)       |
+| Chaining processing on upload         | [Workflows](https://www.filestack.com/docs/workflows/)             |
+| Security policies and signed URLs     | [Security](https://www.filestack.com/docs/security/)               |
 
 ## Final thoughts
 

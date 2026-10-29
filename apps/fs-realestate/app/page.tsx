@@ -9,6 +9,8 @@ import {
 } from "@/components/features/BottomSections";
 import { ChevronDown, ArrowUpDown } from "lucide-react";
 import { useListingStore } from "@/store/listingStore";
+import { SITE } from "@/lib/seo";
+import { DemoAbout, JsonLd } from "@repo/seo/components";
 
 export default function HomePage() {
   const listings = useListingStore((state) => state.listings);
@@ -57,6 +59,9 @@ export default function HomePage() {
           </main>
         </div>
       </div>
+
+      <JsonLd site={SITE} />
+      <DemoAbout site={SITE} />
     </div>
   );
 }

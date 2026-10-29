@@ -1,5 +1,10 @@
 import { ReceiptReader } from '@/components/features/ReceiptReader';
 import { Shell } from '@/components/ui/Shell';
+import type { Metadata } from 'next';
+import { pageMetadata } from '@repo/seo';
+import { SITE } from '@/lib/seo';
+
+export const metadata: Metadata = pageMetadata(SITE, '/demo');
 
 export default function DemoPage() {
   return (

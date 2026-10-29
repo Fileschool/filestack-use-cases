@@ -1,13 +1,19 @@
 import Link from 'next/link';
 
 import { Chrome } from '@/components/Chrome';
+import type { Metadata } from 'next';
+
+import { pageMetadata } from '@repo/seo';
 import { featureIndex } from '@/lib/catalogue';
+import { SITE } from '@/lib/seo';
 
 const SHAPE: Record<string, { label: string; bg: string; fg: string }> = {
   url: { label: 'URL', bg: 'rgba(29,78,216,.1)', fg: '#1d4ed8' },
   signed: { label: 'Signed URL', bg: 'rgba(180,120,20,.14)', fg: '#8a5b14' },
   workflow: { label: 'Workflow', bg: 'rgba(124,58,237,.12)', fg: '#7c3aed' },
 };
+
+export const metadata: Metadata = pageMetadata(SITE, '/capabilities');
 
 export default function CapabilitiesPage() {
   const features = featureIndex();

@@ -2,6 +2,7 @@ import type { Client, PickerFileMetadata, PickerOptions } from 'filestack-js';
 
 import { FILESTACK_API_KEY } from '@/lib/filestack';
 import { IStoredFile } from '@/interfaces/filestack.interface';
+import { withBasePath } from '@repo/seo';
 
 let clientPromise: Promise<Client> | null = null;
 
@@ -53,7 +54,7 @@ export async function pickFiles(options: Partial<PickerOptions> = {}): Promise<I
  * the server; the browser only ever receives a finished URL.
  */
 export async function requestSignedUrl(handle: string, tasks: string[]): Promise<string> {
-  const response = await fetch('/api/filestack/sign', {
+  const response = await fetch(withBasePath('/api/filestack/sign'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ handle, tasks }),

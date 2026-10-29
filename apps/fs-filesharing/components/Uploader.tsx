@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { MAX_FILE_BYTES, formatBytes } from "@/lib/utils";
 import { Transformations } from "@/components/Transformations";
+import { withBasePath } from "@repo/seo";
 
 type UploadedFile = {
   handle: string;
@@ -136,7 +137,7 @@ export function Uploader({ apiKey }: { apiKey: string }) {
 
         setState({ kind: "saving", file });
 
-        const saveRes = await fetch("/api/share", {
+        const saveRes = await fetch(withBasePath("/api/share"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...uploaded, fingerprint }),
@@ -150,7 +151,7 @@ export function Uploader({ apiKey }: { apiKey: string }) {
         }
 
         const { code } = (await saveRes.json()) as { code: string };
-        const shareUrl = `${window.location.origin}/s/${code}`;
+        const shareUrl = `${window.location.origin}${withBasePath(`/s/${code}`)}`;
 
         setState({ kind: "done", code, shareUrl, uploaded });
       } catch (err) {

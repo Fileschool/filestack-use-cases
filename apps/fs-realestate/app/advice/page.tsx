@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen, TrendingUp, Hammer, PiggyBank } from "lucide-react";
 import { PageHero } from "@/components/features/PageHero";
+import { noindex } from "@repo/seo";
 
+// Fictional brand content and forms: useful in the demo, not in search results.
 export const metadata: Metadata = {
   title: "Advice — Horizon Pro",
   description:
     "Guides, tips, and market insights for buyers, sellers, and renters.",
+  ...noindex,
 };
 
 const ARTICLES = [

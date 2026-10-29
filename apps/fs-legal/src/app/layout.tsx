@@ -1,7 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Inter } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/providers/QueryProvider';
+import { rootMetadata, viewport as buildViewport } from '@repo/seo';
+import { SITE } from '@/lib/seo';
 
 const cormorant = Cormorant_Garamond({
   variable: '--font-cormorant',
@@ -15,11 +17,8 @@ const inter = Inter({
   weight: ['300', '400', '500', '600'],
 });
 
-export const metadata: Metadata = {
-  title: 'Pemberton Hale | Solicitors & Advisors',
-  description:
-    'Pemberton Hale advises private clients and owner-managed businesses. Documents exchanged through our client room, never by email.',
-};
+export const metadata: Metadata = rootMetadata(SITE);
+export const viewport: Viewport = buildViewport(SITE);
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

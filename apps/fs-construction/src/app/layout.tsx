@@ -1,8 +1,10 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { rootMetadata, viewport as buildViewport } from '@repo/seo';
+import { SITE } from '@/lib/seo';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -16,10 +18,8 @@ const playfair = Playfair_Display({
   weight: ['400', '500', '600', '700', '800'],
 });
 
-export const metadata: Metadata = {
-  title: 'APEX | Construction & Development',
-  description: 'APEX is a premier construction and development firm. We create exceptional structures in the world\'s most ambitious markets.',
-};
+export const metadata: Metadata = rootMetadata(SITE);
+export const viewport: Viewport = buildViewport(SITE);
 
 export default function RootLayout({
   children,

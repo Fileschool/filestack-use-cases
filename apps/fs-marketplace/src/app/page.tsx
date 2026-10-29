@@ -6,6 +6,8 @@ import { FilestackFooter } from '@/components/ui/FilestackFooter';
 import { BRAND } from '@/lib/copy';
 import { MEDIA } from '@/lib/media';
 import { cdnUrl } from '@/lib/filestack';
+import { DemoAbout, JsonLd } from '@repo/seo/components';
+import { SITE } from '@/lib/seo';
 
 /** One photograph, many crops. Every tile below is the same handle. */
 const tile = (handle: string, w: number, h: number, extra: string[] = []) =>
@@ -172,6 +174,9 @@ export default function HomePage() {
           {BRAND.portal.cta} <ArrowRight className="size-4" />
         </Link>
       </section>
+
+      <JsonLd site={SITE} />
+      <DemoAbout site={SITE} />
 
       <FilestackFooter firm={BRAND.legal} blurb={BRAND.filestack.blurb} chain={BRAND.filestack.chain} />
     </div>

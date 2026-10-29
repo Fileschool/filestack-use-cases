@@ -1,6 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { rootMetadata, viewport as buildViewport } from '@repo/seo';
+import { SITE } from '@/lib/seo';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -8,11 +10,8 @@ const inter = Inter({
   weight: ['400', '500', '600', '700', '800'],
 });
 
-export const metadata: Metadata = {
-  title: 'Filestack Use Cases',
-  description:
-    'Ten working applications showing what you can build with Filestack, and exactly which capabilities each one uses.',
-};
+export const metadata: Metadata = rootMetadata(SITE);
+export const viewport: Viewport = buildViewport(SITE);
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

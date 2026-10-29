@@ -6,6 +6,8 @@ import { FilestackFooter } from '@/components/ui/FilestackFooter';
 import { BRAND } from '@/lib/copy';
 import { MEDIA } from '@/lib/media';
 import { cdnUrl } from '@/lib/filestack';
+import { DemoAbout, JsonLd } from '@repo/seo/components';
+import { SITE } from '@/lib/seo';
 
 export default function HomePage() {
   return (
@@ -152,6 +154,9 @@ export default function HomePage() {
           <p className="mt-5 text-sm" style={{ color: 'var(--brand-600)' }}>{BRAND.proof.attribution}</p>
         </div>
       </section>
+
+      <JsonLd site={SITE} />
+      <DemoAbout site={SITE} />
 
       <FilestackFooter firm={BRAND.legal} blurb={BRAND.filestack.blurb} chain={BRAND.filestack.chain} />
     </div>

@@ -1,10 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, BookOpen, FileCode, Film, Terminal } from 'lucide-react';
+import { ArrowLeft, BookOpen, ExternalLink, FileCode, Film, Terminal } from 'lucide-react';
 
 import { Chrome } from '@/components/Chrome';
 import { shot } from '@/lib/shot';
+import type { Metadata } from 'next';
+import { DEMOS, OG_IMAGE, ogImageUrl, otherDemoUrl, siteUrl } from '@repo/seo';
 import { USE_CASES, getUseCase } from '@/lib/catalogue';
+import { SITE } from '@/lib/seo';
 
 export function generateStaticParams() {
   return USE_CASES.map((useCase) => ({ slug: useCase.slug }));
@@ -30,6 +33,26 @@ const SHAPE: Record<string, { label: string; note: string; bg: string; fg: strin
     fg: '#7c3aed',
   },
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const useCase = getUseCase(slug);
+  if (!useCase) return {};
+
+  const url = siteUrl(SITE, `/use-cases/${slug}`);
+  const name = DEMOS.find((demo) => demo.slug === slug)?.name ?? useCase.tagline;
+  const title = `${name} Example | Filestack`;
+  const description = useCase.description.length > 160 ? `${useCase.description.slice(0, 157).trimEnd()}\u2026` : useCase.description;
+  const images = [{ url: ogImageUrl(useCase.screenshot), ...OG_IMAGE, alt: `${useCase.business} demo built on Filestack` }];
+
+  return {
+    title: { absolute: title },
+    description,
+    alternates: { canonical: url },
+    openGraph: { type: 'website', siteName: 'Filestack', url, title, description, images },
+    twitter: { card: 'summary_large_image', title, description, images },
+  };
+}
 
 export default async function UseCasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -120,6 +143,10 @@ export default async function UseCasePage({ params }: { params: Promise<{ slug: 
           </div>
 
           <aside className="space-y-5">
+            <a href={otherDemoUrl(useCase.slug)} className="btn-primary flex w-full items-center justify-center gap-2">
+              Open the live demo <ExternalLink className="size-4" />
+            </a>
+
             <div className="card p-5">
               <h2 className="label">Run it</h2>
               <pre

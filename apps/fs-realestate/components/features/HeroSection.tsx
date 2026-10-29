@@ -5,6 +5,9 @@ import { Search, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 export const HeroSection: FC = () => {
   return (
     <section className="relative w-full h-[600px] overflow-hidden">
+      {/* The hero is all imagery and search, so the page heading is for screen
+          readers and crawlers. */}
+      <h1 className="sr-only">Horizon Pro, a real estate listing image demo built on Filestack</h1>
       {/* Background Image */}
       <div className="absolute inset-0">
         <img

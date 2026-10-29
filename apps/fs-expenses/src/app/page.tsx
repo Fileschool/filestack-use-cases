@@ -6,6 +6,8 @@ import { FilestackFooter } from '@/components/ui/FilestackFooter';
 import { BRAND } from '@/lib/copy';
 import { MEDIA } from '@/lib/media';
 import { cdnUrl } from '@/lib/filestack';
+import { DemoAbout, JsonLd } from '@repo/seo/components';
+import { SITE } from '@/lib/seo';
 
 export default function HomePage() {
   const shot = cdnUrl(MEDIA.hero, [
@@ -153,6 +155,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <JsonLd site={SITE} />
+      <DemoAbout site={SITE} />
 
       <FilestackFooter firm={BRAND.legal} blurb={BRAND.filestack.blurb} chain={BRAND.filestack.chain} />
     </div>

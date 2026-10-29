@@ -1,5 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { Uploader } from "@/components/Uploader";
+import { SITE } from "@/lib/seo";
+import { DemoAbout, JsonLd } from "@repo/seo/components";
 
 export default function Home() {
   const apiKey = process.env.NEXT_PUBLIC_FILESTACK_API_KEY ?? "";
@@ -43,6 +45,9 @@ export default function Home() {
           )}
         </div>
       </main>
+
+      <JsonLd site={SITE} />
+      <DemoAbout site={SITE} />
 
       <footer className="border-t border-border bg-paper/60">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4 text-xs text-ink-muted">

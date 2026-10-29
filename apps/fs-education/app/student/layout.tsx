@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
+import { noindex } from "@repo/seo";
 import { SiteHeader } from "@/components/site-header";
 import { requireStudent } from "@/lib/session";
+
+/** Signed-in screens stay out of search results. */
+export const metadata: Metadata = noindex;
 
 export default async function StudentLayout({
   children,

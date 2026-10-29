@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { Mail, MessageSquare, MapPin } from "lucide-react";
 import { PageHero } from "@/components/features/PageHero";
+import { noindex } from "@repo/seo";
 
+// Fictional brand content and forms: useful in the demo, not in search results.
 export const metadata: Metadata = {
   title: "Contact — Horizon Pro",
   description: "Get in touch with the Horizon Pro team.",
+  ...noindex,
 };
 
 export default function ContactPage() {

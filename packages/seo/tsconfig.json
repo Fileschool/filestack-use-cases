@@ -1,0 +1,11 @@
+{
+  "extends": "@repo/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": ["dom", "esnext"],
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

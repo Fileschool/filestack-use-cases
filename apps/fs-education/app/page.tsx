@@ -13,6 +13,8 @@ import {
 } from "@/components/mockups";
 import { listUsersByRole } from "@/lib/data";
 import { getCurrentUser, homeFor } from "@/lib/session";
+import { SITE } from "@/lib/seo";
+import { DemoAbout, JsonLd } from "@repo/seo/components";
 
 const STEPS = [
   {
@@ -225,6 +227,9 @@ export default async function LandingPage() {
             </LoginCta>
           </div>
         </section>
+
+        <JsonLd site={SITE} />
+        <DemoAbout site={SITE} />
 
         {/* Footer */}
         <footer className="mx-auto flex w-full max-w-5xl flex-col items-center gap-2 px-4 py-10 text-center sm:px-6">

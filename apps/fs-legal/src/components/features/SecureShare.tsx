@@ -11,6 +11,7 @@ import { BRAND } from '@/lib/copy';
 import { newReference, useSubmissionStore } from '@/store/submissionStore';
 import { formatBytes } from '@/lib/utils';
 import type { IStoredFile } from '@/interfaces/filestack.interface';
+import { withBasePath } from '@repo/seo';
 
 type Share = { url: string; expiresAt: number; recipient: string };
 
@@ -87,7 +88,7 @@ export function SecureShare() {
     try {
       // The signing route holds the app secret and returns a finished URL that
       // stops working on its own. There is no permanent link to leak.
-      const response = await fetch("/api/filestack/sign", {
+      const response = await fetch(withBasePath("/api/filestack/sign"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ handle: file.handle, tasks: ["ocr"] }),

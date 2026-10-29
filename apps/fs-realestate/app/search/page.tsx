@@ -3,12 +3,10 @@ import { Suspense } from "react";
 import { SearchFilters } from "@/components/features/SearchFilters";
 import { SearchResults } from "@/components/features/SearchResults";
 import { PageHero } from "@/components/features/PageHero";
+import { pageMetadata } from "@repo/seo";
+import { SITE } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Search Properties — Horizon Pro",
-  description:
-    "Filter listings by city, price, property type, beds, and baths.",
-};
+export const metadata: Metadata = pageMetadata(SITE, '/search');
 
 export default function SearchPage() {
   return (

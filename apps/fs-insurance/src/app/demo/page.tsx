@@ -4,6 +4,11 @@ import { ReportClaimForm } from '@/components/features/ReportClaimForm';
 import { FilestackStrip } from '@/components/ui/FilestackStrip';
 import { FilestackFooter } from '@/components/ui/FilestackFooter';
 import { BRAND } from '@/lib/copy';
+import type { Metadata } from 'next';
+import { pageMetadata } from '@repo/seo';
+import { SITE } from '@/lib/seo';
+
+export const metadata: Metadata = pageMetadata(SITE, '/demo');
 
 export default function ReportPage() {
   return (

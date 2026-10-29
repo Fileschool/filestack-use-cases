@@ -2,12 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Camera, TrendingUp, Users, Sparkles } from "lucide-react";
 import { PageHero } from "@/components/features/PageHero";
+import { pageMetadata } from "@repo/seo";
+import { SITE } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Sell Your Property — Horizon Pro",
-  description:
-    "List your property on Horizon Pro and reach thousands of motivated buyers.",
-};
+export const metadata: Metadata = pageMetadata(SITE, '/sell');
 
 export default function SellPage() {
   const steps = [

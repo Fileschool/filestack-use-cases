@@ -1,17 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from 'next';
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/features/Navbar";
 import { Footer } from "@/components/features/Footer";
 import { Tour } from "@/components/features/Tour";
+import { rootMetadata, viewport as buildViewport } from '@repo/seo';
+import { SITE } from '@/lib/seo';
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Horizon Pro — Premium Real Estate Listings",
-  description:
-    "Experience the future of real estate listings with Filestack's powerful image delivery system.",
-};
+export const metadata: Metadata = rootMetadata(SITE);
+export const viewport: Viewport = buildViewport(SITE);
 
 export default function RootLayout({
   children,

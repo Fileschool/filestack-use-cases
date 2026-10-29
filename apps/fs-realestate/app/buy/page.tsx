@@ -2,12 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Home, MapPin, Calculator, Building2 } from "lucide-react";
 import { PageHero } from "@/components/features/PageHero";
+import { pageMetadata } from "@repo/seo";
+import { SITE } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Buy a Property — Horizon Pro",
-  description:
-    "Browse premium real estate listings and find your next home with Horizon Pro.",
-};
+export const metadata: Metadata = pageMetadata(SITE, '/buy');
 
 export default function BuyPage() {
   const tiles = [

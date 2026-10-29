@@ -1,6 +1,8 @@
 import { UseCaseCard } from '@/components/UseCaseCard';
 import { Chrome } from '@/components/Chrome';
 import { USE_CASES, featureIndex } from '@/lib/catalogue';
+import { SITE } from '@/lib/seo';
+import { DemoAbout, JsonLd } from '@repo/seo/components';
 
 export default function HomePage() {
   const features = featureIndex();
@@ -45,6 +47,9 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      <JsonLd site={SITE} />
+      <DemoAbout site={SITE} />
     </Chrome>
   );
 }

@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { User } from "lucide-react";
 import { PageHero } from "@/components/features/PageHero";
+import { noindex } from "@repo/seo";
 
+// Fictional brand content and forms: useful in the demo, not in search results.
 export const metadata: Metadata = {
   title: "Find an Agent — Horizon Pro",
   description: "Connect with experienced real estate agents in your city.",
+  ...noindex,
 };
 
 const AGENTS = [

@@ -1,7 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Libre_Franklin, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/providers/QueryProvider';
+import { rootMetadata, viewport as buildViewport } from '@repo/seo';
+import { SITE } from '@/lib/seo';
 
 const franklin = Libre_Franklin({
   variable: '--font-franklin',
@@ -15,11 +17,8 @@ const plexMono = IBM_Plex_Mono({
   weight: ['400', '500', '600'],
 });
 
-export const metadata: Metadata = {
-  title: 'Redfern | Mail & Document Services',
-  description:
-    'Redfern handles inbound post for businesses that no longer have a post room. Received, routed and indexed the day it arrives.',
-};
+export const metadata: Metadata = rootMetadata(SITE);
+export const viewport: Viewport = buildViewport(SITE);
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
